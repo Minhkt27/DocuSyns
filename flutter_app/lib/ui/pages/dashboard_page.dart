@@ -391,7 +391,9 @@ class _DashboardPageState extends State<DashboardPage> {
       // Ask for note
       String? updateNote;
       bool proceed = false;
-      if (!context.mounted) return;
+      if (!mounted) return;
+      
+      // ignore: use_build_context_synchronously
       await showDialog(
         context: context,
         builder: (ctx) {
