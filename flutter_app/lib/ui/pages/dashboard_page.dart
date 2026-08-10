@@ -434,7 +434,8 @@ class _DashboardPageState extends State<DashboardPage> {
       try {
         await _apiService.updateDocumentVersion(doc.id, file.name, file.bytes!, note: updateNote);
         widget.onActivity?.call('Updated version: ${file.name}');
-        if (mounted) {
+        await _loadContent();
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('New version uploaded!'), backgroundColor: Colors.green),
           );
