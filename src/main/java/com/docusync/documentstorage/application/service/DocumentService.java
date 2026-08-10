@@ -45,21 +45,25 @@ public class DocumentService implements ManageDocumentUseCase {
         // Upload to storage
         String storageFileId = fileStoragePort.uploadFile(fileName, content, "application/octet-stream");
 
-        // Save Version
-        DocumentVersion version = new DocumentVersion(null, documentId, getNextVersion(documentId), storageFileId, fileName, fileSize, userId, java.time.LocalDateTime.now(), note, false);
-        version = documentPersistencePort.saveDocumentVersion(version);
-
         // Enforce Max Versions Limit
         int maxVersions = systemSettingsService.getSettings().maxVersionsPerFile();
         List<DocumentVersion> activeVersions = documentPersistencePort.findDocumentVersionsByDocumentId(documentId);
-        if (activeVersions.size() > maxVersions) {
-            // Keep the newest maxVersions, soft delete the rest
-            List<DocumentVersion> versionsToDelete = activeVersions.subList(maxVersions, activeVersions.size());
-            for (DocumentVersion v : versionsToDelete) {
-                DocumentVersion deletedV = new DocumentVersion(v.id(), v.documentId(), v.versionNumber(), v.storageFileId(), v.fileName(), v.fileSize(), v.uploadedBy(), v.uploadedAt(), v.note(), true);
-                documentPersistencePort.saveDocumentVersion(deletedV);
+        
+        // We are adding 1 new version, so we can keep at most (maxVersions - 1) existing versions
+        if (activeVersions.size() >= maxVersions) {
+            int versionsToKeep = Math.max(0, maxVersions - 1);
+            if (versionsToKeep < activeVersions.size()) {
+                List<DocumentVersion> versionsToDelete = activeVersions.subList(versionsToKeep, activeVersions.size());
+                for (DocumentVersion v : versionsToDelete) {
+                    DocumentVersion deletedV = new DocumentVersion(v.id(), v.documentId(), v.versionNumber(), v.storageFileId(), v.fileName(), v.fileSize(), v.uploadedBy(), v.uploadedAt(), v.note(), true);
+                    documentPersistencePort.saveDocumentVersion(deletedV);
+                }
             }
         }
+
+        // Save Version
+        DocumentVersion version = new DocumentVersion(null, documentId, getNextVersion(documentId), storageFileId, fileName, fileSize, userId, java.time.LocalDateTime.now(), note, false);
+        version = documentPersistencePort.saveDocumentVersion(version);
 
         // Update Document Current Version
         Document updatedDocument = new Document(document.id(), document.documentCode(), document.title(), version.id(), document.createdBy(), document.folderId(), document.isDeleted(), document.lockedBy(), document.lockedByName());
