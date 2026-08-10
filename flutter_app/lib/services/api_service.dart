@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class FolderModel {
@@ -189,7 +190,7 @@ class ApiService {
   static int? currentUserId;
   static void Function()? onUnauthorized;
   
-  static final _storage = const FlutterSecureStorage();
+  static const _storage = FlutterSecureStorage();
 
   void _checkUnauthorized(http.Response response) {
     if (response.statusCode == 401) {
@@ -387,7 +388,7 @@ class ApiService {
     );
     _checkUnauthorized(response);
     if (response.statusCode != 200) {
-      print('Lock Document failed with status: ${response.statusCode}, body: ${response.body}');
+      debugPrint('Lock Document failed with status: ${response.statusCode}, body: ${response.body}');
       return false;
     }
     return true;
@@ -474,7 +475,7 @@ class ApiService {
     );
     _checkUnauthorized(response);
     if (response.statusCode != 200) {
-      print('Rollback failed with status: ${response.statusCode}, body: ${response.body}');
+      debugPrint('Rollback failed with status: ${response.statusCode}, body: ${response.body}');
       throw Exception('Failed to rollback to version. Backend says: ${response.body}');
     }
   }

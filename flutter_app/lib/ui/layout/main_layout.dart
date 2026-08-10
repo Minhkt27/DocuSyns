@@ -18,8 +18,8 @@ class _MainLayoutState extends State<MainLayout> {
   final List<String> _logs = [];
   int _selectedIndex = 0;
 
-  String _currentRole = ApiService.currentRole ?? 'USER';
-  String _currentUserName = ApiService.currentUserName ?? 'User';
+  final String _currentRole = ApiService.currentRole ?? 'USER';
+  final String _currentUserName = ApiService.currentUserName ?? 'User';
 
   Widget _getSelectedPage() {
     switch (_selectedIndex) {
@@ -179,11 +179,10 @@ class _MainLayoutState extends State<MainLayout> {
                         onPressed: () async {
                           final api = ApiService();
                           await api.logout();
-                          if (mounted) {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (_) => const LoginPage()),
-                            );
-                          }
+                          if (!context.mounted) return;
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(builder: (_) => const LoginPage()),
+                          );
                         },
                       ),
                     ],

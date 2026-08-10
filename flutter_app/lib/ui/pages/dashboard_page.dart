@@ -342,10 +342,12 @@ class _DashboardPageState extends State<DashboardPage> {
         
         setState(() {
           int idx = _documents.indexWhere((d) => d.id == doc.id);
-          if (idx != -1) _documents[idx] = doc.copyWith(
-            lockedBy: ApiService.currentUserId,
-            lockedByName: ApiService.currentUserName,
-          );
+          if (idx != -1) {
+            _documents[idx] = doc.copyWith(
+              lockedBy: ApiService.currentUserId,
+              lockedByName: ApiService.currentUserName,
+            );
+          }
         });
         widget.onActivity?.call('Locked: ${doc.title}');
       }
@@ -392,6 +394,7 @@ class _DashboardPageState extends State<DashboardPage> {
       await showDialog(
         context: context,
         builder: (ctx) {
+          if (!mounted) return const SizedBox.shrink();
           final controller = TextEditingController();
           return AlertDialog(
             backgroundColor: const Color(0xFF1E293B),
@@ -449,7 +452,7 @@ class _DashboardPageState extends State<DashboardPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => Center(child: const CircularProgressIndicator()),
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -476,7 +479,7 @@ class _DashboardPageState extends State<DashboardPage> {
           width: 500,
           height: 400,
           child: history.isEmpty 
-              ? Center(child: Text('No version history', style: TextStyle(color: Colors.white54)))
+              ? const Center(child: Text('No version history', style: TextStyle(color: Colors.white54)))
               : ListView.builder(
                   itemCount: history.length,
                   itemBuilder: (context, index) {
@@ -501,21 +504,21 @@ class _DashboardPageState extends State<DashboardPage> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(color: Colors.blueAccent, borderRadius: BorderRadius.circular(4)),
-                                  child: Text('CURRENT', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  child: const Text('CURRENT', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                                 )
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(version.fileName, style: TextStyle(color: Colors.white70, fontSize: 13)),
+                          Text(version.fileName, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                           if (version.note != null && version.note!.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
-                              child: Text('Note: ${version.note}', style: TextStyle(color: Colors.amberAccent, fontSize: 13, fontStyle: FontStyle.italic)),
+                              child: Text('Note: ${version.note}', style: const TextStyle(color: Colors.amberAccent, fontSize: 13, fontStyle: FontStyle.italic)),
                             ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              Text(version.uploadedAt?.replaceAll('T', ' ').substring(0, 16) ?? 'Unknown time', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                              Text(version.uploadedAt?.replaceAll('T', ' ').substring(0, 16) ?? 'Unknown time', style: const TextStyle(color: Colors.white38, fontSize: 12)),
                               const Spacer(),
                               TextButton.icon(
                                 onPressed: () => _downloadSpecificVersion(doc.id, version.id, version.fileName),
@@ -736,7 +739,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.folder_open, size: 64, color: Colors.white24),
+                              const Icon(Icons.folder_open, size: 64, color: Colors.white24),
                               const SizedBox(height: 16),
                               Text(
                                 _currentFolderId == null
@@ -884,8 +887,11 @@ class _DashboardPageState extends State<DashboardPage> {
     bool isLocked = doc.lockedBy != null;
     String lockStatusText = 'Available';
     if (isLocked) {
-      if (doc.lockedBy == ApiService.currentUserId) lockStatusText = 'Locked by you';
-      else lockStatusText = 'Locked by ${doc.lockedByName ?? "User ${doc.lockedBy}"}';
+      if (doc.lockedBy == ApiService.currentUserId) {
+        lockStatusText = 'Locked by you';
+      } else {
+        lockStatusText = 'Locked by ${doc.lockedByName ?? "User ${doc.lockedBy}"}';
+      }
     }
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
