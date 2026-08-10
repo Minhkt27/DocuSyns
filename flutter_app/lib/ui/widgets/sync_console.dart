@@ -56,7 +56,7 @@ class _SyncConsoleState extends State<SyncConsole> {
         border: Border.all(color: Colors.white10, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
