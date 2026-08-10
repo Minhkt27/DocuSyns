@@ -69,8 +69,8 @@ public class DocumentService implements ManageDocumentUseCase {
         Document updatedDocument = new Document(document.id(), document.documentCode(), document.title(), version.id(), document.createdBy(), document.folderId(), document.isDeleted(), document.lockedBy(), document.lockedByName());
         documentPersistencePort.saveDocument(updatedDocument);
 
-        // Auto release lock after upload
-        documentLockPort.releaseLock(documentId, userId, false);
+        // Auto release lock after upload has been disabled per user request
+        // documentLockPort.releaseLock(documentId, userId, false);
 
         activityLogService.logActivity(userId, "UPLOAD_VERSION", documentId, "DOCUMENT");
 
@@ -101,7 +101,8 @@ public class DocumentService implements ManageDocumentUseCase {
         Document updatedDocument = new Document(document.id(), document.documentCode(), document.title(), version.id(), document.createdBy(), document.folderId(), document.isDeleted(), document.lockedBy(), document.lockedByName());
         documentPersistencePort.saveDocument(updatedDocument);
 
-        documentLockPort.releaseLock(documentId, userId, false);
+        // Auto release lock after rollback has been disabled per user request
+        // documentLockPort.releaseLock(documentId, userId, false);
 
         activityLogService.logActivity(userId, "ROLLBACK_VERSION", documentId, "DOCUMENT");
 
