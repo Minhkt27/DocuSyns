@@ -361,7 +361,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _updateDocument(DocumentModel doc) async {
-    int myUserId = widget.userRole == 'ADMIN' ? 1 : (widget.userRole == 'PROJECT_MANAGER' ? 2 : 3);
+    int? myUserId = ApiService.currentUserId;
     if (doc.lockedBy != myUserId) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
