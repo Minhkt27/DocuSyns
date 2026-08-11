@@ -9,5 +9,6 @@ public interface FolderRepository extends JpaRepository<FolderEntity, Long> {
     List<FolderEntity> findByParentIdIsNullAndIsDeleted(boolean isDeleted);
     List<FolderEntity> findByParentIdAndIsDeleted(Long parentId, boolean isDeleted);
     List<FolderEntity> findByNameContainingIgnoreCaseAndIsDeleted(String name, boolean isDeleted);
+    List<FolderEntity> findByNameContainingIgnoreCaseAndCreatedByAndIsDeleted(String name, Long createdBy, boolean isDeleted);
     List<FolderEntity> findByIsDeleted(boolean isDeleted);
 }

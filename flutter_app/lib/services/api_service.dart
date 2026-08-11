@@ -182,7 +182,7 @@ class ActivityLogModel {
 }
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080/api/v1';
+  static const String baseUrl = 'http://192.168.1.7:8080/api/v1';
   static String? token;
   static String? currentRole;
   static String? currentUserName;
@@ -528,8 +528,9 @@ class ApiService {
   }
 
   // SEARCH API
-  Future<Map<String, List<dynamic>>> globalSearch(String query) async {
-    final response = await http.get(Uri.parse('$baseUrl/search?q=$query'), headers: {'Authorization': 'Bearer $token'});
+  Future<Map<String, List<dynamic>>> globalSearch(String query, {bool myOnly = false}) async {
+    final url = '$baseUrl/search?q=$query' + (myOnly ? '&myOnly=true' : '');
+    final response = await http.get(Uri.parse(url), headers: {'Authorization': 'Bearer $token'});
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       return {

@@ -118,7 +118,7 @@ class _DashboardPageState extends State<DashboardPage> {
           _documents = (trash['documents'] as List).cast<DocumentModel>();
         });
       } else if (_searchQuery.isNotEmpty) {
-        final searchResults = await _apiService.globalSearch(_searchQuery);
+        final searchResults = await _apiService.globalSearch(_searchQuery, myOnly: widget.isMyDocuments);
         setState(() {
           _folders = (searchResults['folders'] as List).cast<FolderModel>();
           _documents = (searchResults['documents'] as List).cast<DocumentModel>();
