@@ -155,14 +155,16 @@ class PagedResponse<T> {
 class ActivityLogModel {
   final int id;
   final int userId;
+  final String userName;
   final String action;
-  final int targetId;
-  final String targetType;
+  final int? targetId;
+  final String? targetType;
   final String createdAt;
 
   ActivityLogModel({
     required this.id,
     required this.userId,
+    required this.userName,
     required this.action,
     required this.targetId,
     required this.targetType,
@@ -173,6 +175,7 @@ class ActivityLogModel {
     return ActivityLogModel(
       id: json['id'],
       userId: json['userId'],
+      userName: json['userName'] ?? 'User ${json['userId']}',
       action: json['action'],
       targetId: json['targetId'],
       targetType: json['targetType'],
@@ -551,7 +554,7 @@ class ApiService {
   }
 
   Future<void> updateSettings(int maxVersions, int trashRetention, {String? clientAppVersion, String? clientAppUrl}) async {
-    final body = {
+    final Map<String, dynamic> body = {
       'maxVersionsPerFile': maxVersions,
       'trashRetentionDays': trashRetention,
     };

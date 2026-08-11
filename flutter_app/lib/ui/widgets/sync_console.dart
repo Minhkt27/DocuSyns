@@ -117,7 +117,7 @@ class _SyncConsoleState extends State<SyncConsole> {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: Text(
-                                '[$timeStr] User ${log.userId} ${log.action} ${log.targetType} ${log.targetId}',
+                                '[$timeStr] ${log.userName} ${log.action} ${log.targetType} ${log.targetId}',
                                 style: const TextStyle(
                                   color: Colors.blueAccent,
                                   fontFamily: 'monospace',
