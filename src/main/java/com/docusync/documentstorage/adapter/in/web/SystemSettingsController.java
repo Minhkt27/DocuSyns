@@ -21,19 +21,21 @@ public class SystemSettingsController {
 
     @PutMapping
     public ResponseEntity<SystemSettings> updateSettings(@RequestBody UpdateSettingsRequest request,
-                                                         @RequestAttribute(name="userRole", required=false) String userRole) {
+            @RequestAttribute(name = "userRole", required = false) String userRole) {
         System.out.println("UPDATE SETTINGS CALLED. Role: " + userRole + ", Request: " + request);
         if (!"ADMIN".equals(userRole)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.ok(service.updateSettings(request.getMaxVersionsPerFile(), request.getTrashRetentionDays()));
+        return ResponseEntity
+                .ok(service.updateSettings(request.getMaxVersionsPerFile(), request.getTrashRetentionDays()));
     }
 
     public static class UpdateSettingsRequest {
         private Integer maxVersionsPerFile;
         private Integer trashRetentionDays;
 
-        public UpdateSettingsRequest() {}
+        public UpdateSettingsRequest() {
+        }
 
         public Integer getMaxVersionsPerFile() {
             return maxVersionsPerFile;
