@@ -550,17 +550,21 @@ class ApiService {
     throw Exception('Failed to fetch settings');
   }
 
-  Future<void> updateSettings(int maxVersions, int trashRetention) async {
+  Future<void> updateSettings(int maxVersions, int trashRetention, {String? clientAppVersion, String? clientAppUrl}) async {
+    final body = {
+      'maxVersionsPerFile': maxVersions,
+      'trashRetentionDays': trashRetention,
+    };
+    if (clientAppVersion != null) body['clientAppVersion'] = clientAppVersion;
+    if (clientAppUrl != null) body['clientAppUrl'] = clientAppUrl;
+
     final response = await http.put(
       Uri.parse('$baseUrl/settings'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({
-        'maxVersionsPerFile': maxVersions,
-        'trashRetentionDays': trashRetention,
-      }),
+      body: jsonEncode(body),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to update settings');

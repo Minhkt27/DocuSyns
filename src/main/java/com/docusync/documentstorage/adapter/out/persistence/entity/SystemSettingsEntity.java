@@ -22,4 +22,10 @@ public class SystemSettingsEntity {
     @Column(name = "trash_retention_days", nullable = false)
     @Builder.Default
     private Integer trashRetentionDays = 30;
+
+    @Column(name = "client_app_version")
+    private String clientAppVersion;
+
+    @Column(name = "client_app_url")
+    private String clientAppUrl;
 }

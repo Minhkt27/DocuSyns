@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'dart:async';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../services/api_service.dart';
 import '../widgets/preview_dialog.dart';
@@ -51,6 +54,9 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     _scrollController.addListener(_scrollListener);
     _loadContent();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdates();
+    });
   }
 
   void _scrollListener() {
@@ -99,6 +105,124 @@ class _DashboardPageState extends State<DashboardPage> {
       _currentFolderId = null;
       _searchQuery = '';
       _loadContent();
+    }
+  }
+
+  Future<void> _checkForUpdates() async {
+    try {
+      final settings = await _apiService.getSettings();
+      final latestVersion = settings['clientAppVersion']?.toString() ?? '';
+      final downloadUrl = settings['clientAppUrl']?.toString() ?? '';
+      
+      if (latestVersion.isEmpty || downloadUrl.isEmpty) return;
+
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = packageInfo.version; // e.g. "1.0.0"
+
+      if (_isVersionGreater(latestVersion, currentVersion)) {
+        _showUpdateDialog(latestVersion, downloadUrl);
+      }
+    } catch (e) {
+      debugPrint('Failed to check for updates: $e');
+    }
+  }
+
+  bool _isVersionGreater(String latest, String current) {
+    try {
+      final lParts = latest.split('.').map(int.parse).toList();
+      final cParts = current.split('.').map(int.parse).toList();
+      for (int i = 0; i < 3; i++) {
+        final l = i < lParts.length ? lParts[i] : 0;
+        final c = i < cParts.length ? cParts[i] : 0;
+        if (l > c) return true;
+        if (l < c) return false;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  void _showUpdateDialog(String version, String url) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        bool isDownloading = false;
+        double progress = 0;
+        
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1E293B),
+              title: Text('Update Available', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'A new version ($version) of DocuSync is available and required to continue.',
+                    style: GoogleFonts.inter(color: Colors.white70),
+                  ),
+                  if (isDownloading) ...[
+                    const SizedBox(height: 20),
+                    LinearProgressIndicator(value: progress),
+                    const SizedBox(height: 8),
+                    Text('Downloading: ${(progress * 100).toStringAsFixed(1)}%', style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                  ]
+                ],
+              ),
+              actions: [
+                if (!isDownloading)
+                  TextButton(
+                    onPressed: () => exit(0),
+                    child: Text('Exit App', style: GoogleFonts.inter(color: Colors.redAccent)),
+                  ),
+                if (!isDownloading)
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                    onPressed: () async {
+                      setState(() => isDownloading = true);
+                      await _downloadAndInstallUpdate(url, (p) {
+                        setState(() => progress = p);
+                      });
+                    },
+                    child: Text('Update Now', style: GoogleFonts.inter(color: Colors.white)),
+                  )
+              ],
+            );
+          }
+        );
+      }
+    );
+  }
+
+  Future<void> _downloadAndInstallUpdate(String url, Function(double) onProgress) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final savePath = '${tempDir.path}\\DocuSync_Update_$DateTime.now().millisecondsSinceEpoch.exe';
+      
+      final dio = Dio();
+      await dio.download(
+        url,
+        savePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            onProgress(received / total);
+          }
+        },
+      );
+
+      // Launch the installer
+      await Process.start(savePath, []);
+      
+      // Exit current app so installer can overwrite files
+      exit(0);
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 

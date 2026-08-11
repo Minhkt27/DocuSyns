@@ -22,6 +22,8 @@ class _SettingsPageState extends State<SettingsPage> {
   
   final _maxVersionsController = TextEditingController();
   final _trashRetentionController = TextEditingController();
+  final _appVersionController = TextEditingController();
+  final _appUrlController = TextEditingController();
 
   @override
   void initState() {
@@ -45,6 +47,8 @@ class _SettingsPageState extends State<SettingsPage> {
       final settings = await _apiService.getSettings();
       _maxVersionsController.text = settings['maxVersionsPerFile']?.toString() ?? '5';
       _trashRetentionController.text = settings['trashRetentionDays']?.toString() ?? '30';
+      _appVersionController.text = settings['clientAppVersion']?.toString() ?? '';
+      _appUrlController.text = settings['clientAppUrl']?.toString() ?? '';
     } catch (e) {
       debugPrint('Error loading settings: $e');
     } finally {
@@ -57,6 +61,8 @@ class _SettingsPageState extends State<SettingsPage> {
       await _apiService.updateSettings(
         int.parse(_maxVersionsController.text),
         int.parse(_trashRetentionController.text),
+        clientAppVersion: _appVersionController.text.trim(),
+        clientAppUrl: _appUrlController.text.trim(),
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -76,6 +82,8 @@ class _SettingsPageState extends State<SettingsPage> {
   void dispose() {
     _maxVersionsController.dispose();
     _trashRetentionController.dispose();
+    _appVersionController.dispose();
+    _appUrlController.dispose();
     super.dispose();
   }
 
@@ -142,6 +150,35 @@ class _SettingsPageState extends State<SettingsPage> {
                             controller: _trashRetentionController,
                             icon: Icons.delete_sweep,
                           ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Divider(color: Colors.white10, height: 1),
+                          ),
+                          Text(
+                            'AUTO UPDATER CONFIGURATION',
+                            style: GoogleFonts.inter(
+                              color: Colors.white38,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextSetting(
+                            label: 'Latest Client App Version',
+                            description: 'Version string (e.g., 1.0.1) that triggers auto-update on clients.',
+                            controller: _appVersionController,
+                            icon: Icons.new_releases,
+                            width: 150,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextSetting(
+                            label: 'Client App Download URL',
+                            description: 'Direct link to the Setup.exe file for downloading the update.',
+                            controller: _appUrlController,
+                            icon: Icons.link,
+                            width: 300,
+                          ),
                           const SizedBox(height: 24),
                           Align(
                             alignment: Alignment.centerRight,
@@ -165,6 +202,62 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTextSetting({
+    required String label,
+    required String description,
+    required TextEditingController controller,
+    required IconData icon,
+    double width = 200,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.greenAccent.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.greenAccent, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: GoogleFonts.inter(fontSize: 12, color: Colors.white54),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        SizedBox(
+          width: width,
+          child: TextField(
+            controller: controller,
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.black26,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

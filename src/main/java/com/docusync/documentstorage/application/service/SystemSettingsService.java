@@ -20,15 +20,17 @@ public class SystemSettingsService {
             return defaultEntity;
         });
         Long id = entity.getId() != null ? entity.getId() : 1L;
-        return new SystemSettings(id, entity.getMaxVersionsPerFile(), entity.getTrashRetentionDays());
+        return new SystemSettings(id, entity.getMaxVersionsPerFile(), entity.getTrashRetentionDays(), entity.getClientAppVersion(), entity.getClientAppUrl());
     }
 
     @Transactional
-    public SystemSettings updateSettings(Integer maxVersionsPerFile, Integer trashRetentionDays) {
+    public SystemSettings updateSettings(Integer maxVersionsPerFile, Integer trashRetentionDays, String clientAppVersion, String clientAppUrl) {
         SystemSettingsEntity entity = repository.findAll().stream().findFirst().orElse(new SystemSettingsEntity());
         entity.setMaxVersionsPerFile(maxVersionsPerFile);
         entity.setTrashRetentionDays(trashRetentionDays);
+        if (clientAppVersion != null) entity.setClientAppVersion(clientAppVersion);
+        if (clientAppUrl != null) entity.setClientAppUrl(clientAppUrl);
         entity = repository.save(entity);
-        return new SystemSettings(entity.getId(), entity.getMaxVersionsPerFile(), entity.getTrashRetentionDays());
+        return new SystemSettings(entity.getId(), entity.getMaxVersionsPerFile(), entity.getTrashRetentionDays(), entity.getClientAppVersion(), entity.getClientAppUrl());
     }
 }
