@@ -33,3 +33,10 @@ build/
 .vscode/
 
 google-credentials.json
+
+### Runtime data / build artifacts / logs (should never be committed) ###
+storage_data/
+*.exe
+nginx/logs/*.log
+downloads/
+nginx/downloads/
