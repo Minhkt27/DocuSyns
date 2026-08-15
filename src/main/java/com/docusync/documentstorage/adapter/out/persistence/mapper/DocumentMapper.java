@@ -18,7 +18,9 @@ public class DocumentMapper {
             entity.getFolderId(),
             entity.isDeleted(),
             lockedBy,
-            lockedByName
+            lockedByName,
+            entity.getDeletedAt(),
+            entity.getCreatedAt()
         );
     }
 
@@ -32,6 +34,8 @@ public class DocumentMapper {
             .createdBy(domain.createdBy())
             .folderId(domain.folderId())
             .isDeleted(domain.isDeleted())
+            .deletedAt(domain.deletedAt())
+            .createdAt(domain.createdAt())
             .build();
     }
 
@@ -47,7 +51,8 @@ public class DocumentMapper {
             entity.getUploadedBy(),
             entity.getUploadedAt(),
             entity.getNote(),
-            entity.isDeleted()
+            entity.isDeleted(),
+            entity.isPinned()
         );
     }
 
@@ -62,6 +67,7 @@ public class DocumentMapper {
             .fileSize(domain.fileSize())
             .uploadedBy(domain.uploadedBy())
             .uploadedAt(domain.uploadedAt())
+            .pinned(domain.pinned())
             .note(domain.note())
             .isDeleted(domain.isDeleted())
             .build();
@@ -96,7 +102,8 @@ public class DocumentMapper {
             entity.getParentId(),
             entity.getCreatedBy(),
             entity.getCreatedAt(),
-            entity.isDeleted()
+            entity.isDeleted(),
+            entity.getDeletedAt()
         );
     }
 
@@ -109,6 +116,7 @@ public class DocumentMapper {
             .createdBy(domain.createdBy())
             .createdAt(domain.createdAt())
             .isDeleted(domain.isDeleted())
+            .deletedAt(domain.deletedAt())
             .build();
     }
 }

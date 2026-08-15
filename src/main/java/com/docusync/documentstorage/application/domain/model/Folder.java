@@ -8,5 +8,6 @@ public record Folder(
     Long parentId,
     Long createdBy,
     LocalDateTime createdAt,
-    boolean isDeleted
+    boolean isDeleted,
+    LocalDateTime deletedAt
 ) {}

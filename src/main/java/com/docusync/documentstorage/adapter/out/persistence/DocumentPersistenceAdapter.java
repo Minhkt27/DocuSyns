@@ -105,17 +105,17 @@ public class DocumentPersistenceAdapter implements DocumentPersistencePort {
 
     @Override
     public PageResult<Document> findAllDocuments(String searchQuery, int page, int size) {
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "currentVersionId");
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt");
         Pageable pageable = PageRequest.of(page, size, sort);
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
-            return toPageResult(documentRepository.findByTitleContainingIgnoreCaseAndIsDeleted(searchQuery.trim(), false, pageable));
+            return toPageResult(documentRepository.findByFolderIdIsNullAndTitleContainingIgnoreCaseAndIsDeleted(searchQuery.trim(), false, pageable));
         }
-        return toPageResult(documentRepository.findByIsDeleted(false, pageable));
+        return toPageResult(documentRepository.findByFolderIdIsNullAndIsDeleted(false, pageable));
     }
 
     @Override
     public PageResult<Document> findDocumentsByFolderId(Long folderId, String searchQuery, int page, int size) {
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "currentVersionId");
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt");
         Pageable pageable = PageRequest.of(page, size, sort);
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             return toPageResult(documentRepository.findByFolderIdAndTitleContainingIgnoreCaseAndIsDeleted(folderId, searchQuery.trim(), false, pageable));
@@ -125,7 +125,7 @@ public class DocumentPersistenceAdapter implements DocumentPersistencePort {
 
     @Override
     public PageResult<Document> findDocumentsByFolderIdAndCreatedBy(Long folderId, Long createdBy, String searchQuery, int page, int size) {
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "currentVersionId");
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt");
         Pageable pageable = PageRequest.of(page, size, sort);
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             return toPageResult(documentRepository.findByFolderIdAndCreatedByAndTitleContainingIgnoreCaseAndIsDeleted(folderId, createdBy, searchQuery.trim(), false, pageable));
@@ -135,11 +135,35 @@ public class DocumentPersistenceAdapter implements DocumentPersistencePort {
 
     @Override
     public PageResult<Document> findDocumentsByCreatedBy(Long createdBy, String searchQuery, int page, int size) {
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "currentVersionId");
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt");
         Pageable pageable = PageRequest.of(page, size, sort);
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
-            return toPageResult(documentRepository.findByCreatedByAndTitleContainingIgnoreCaseAndIsDeleted(createdBy, searchQuery.trim(), false, pageable));
+            return toPageResult(documentRepository.findByFolderIdIsNullAndCreatedByAndTitleContainingIgnoreCaseAndIsDeleted(createdBy, searchQuery.trim(), false, pageable));
         }
-        return toPageResult(documentRepository.findByCreatedByAndIsDeleted(createdBy, false, pageable));
+        return toPageResult(documentRepository.findByFolderIdIsNullAndCreatedByAndIsDeleted(createdBy, false, pageable));
+    }
+
+    @Override
+    public List<Document> findTrashedDocuments() {
+        return documentRepository.findByIsDeleted(true, Pageable.unpaged())
+                .getContent().stream()
+                .map(e -> mapper.toDomain(e, null, null))
+                .toList();
+    }
+
+    @Override
+    public List<Document> searchDocuments(String keyword) {
+        return documentRepository.findByTitleContainingIgnoreCaseAndIsDeleted(keyword, false, Pageable.unpaged())
+                .getContent().stream()
+                .map(e -> mapper.toDomain(e, null, null))
+                .toList();
+    }
+
+    @Override
+    public List<Document> searchDocumentsByCreatedBy(String keyword, Long createdBy) {
+        return documentRepository.findByCreatedByAndTitleContainingIgnoreCaseAndIsDeleted(createdBy, keyword, false, Pageable.unpaged())
+                .getContent().stream()
+                .map(e -> mapper.toDomain(e, null, null))
+                .toList();
     }
 }

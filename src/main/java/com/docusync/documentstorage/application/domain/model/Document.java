@@ -1,5 +1,7 @@
 package com.docusync.documentstorage.application.domain.model;
 
+import java.time.LocalDateTime;
+
 public record Document(
     Long id,
     String documentCode,
@@ -9,5 +11,7 @@ public record Document(
     Long folderId,
     boolean isDeleted,
     Long lockedBy,
-    String lockedByName
+    String lockedByName,
+    LocalDateTime deletedAt,
+    LocalDateTime createdAt
 ) {}

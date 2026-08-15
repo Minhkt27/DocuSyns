@@ -20,4 +20,7 @@ public interface ManageDocumentUseCase {
     FileDownload downloadDocument(Long documentId, Long userId);
     void moveDocumentToTrash(Long documentId, Long userId);
     void restoreDocumentFromTrash(Long documentId, Long userId);
+    List<Document> getTrashedDocuments();
+    List<Document> searchDocuments(String keyword, Long userId, boolean myOnly);
+    void setVersionPinned(Long documentId, Long versionId, Long userId, boolean pinned);
 }

@@ -17,4 +17,12 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
     Page<DocumentEntity> findByFolderIdAndTitleContainingIgnoreCaseAndIsDeleted(Long folderId, String title, boolean isDeleted, Pageable pageable);
     Page<DocumentEntity> findByFolderIdAndCreatedByAndTitleContainingIgnoreCaseAndIsDeleted(Long folderId, Long createdBy, String title, boolean isDeleted, Pageable pageable);
     Page<DocumentEntity> findByCreatedByAndTitleContainingIgnoreCaseAndIsDeleted(Long createdBy, String title, boolean isDeleted, Pageable pageable);
+
+    // Root-level views (no folder selected) must only show documents that
+    // aren't inside any folder - otherwise a document uploaded into a folder
+    // would also show up in the top-level "All/My Documents" list.
+    Page<DocumentEntity> findByFolderIdIsNullAndIsDeleted(boolean isDeleted, Pageable pageable);
+    Page<DocumentEntity> findByFolderIdIsNullAndCreatedByAndIsDeleted(Long createdBy, boolean isDeleted, Pageable pageable);
+    Page<DocumentEntity> findByFolderIdIsNullAndTitleContainingIgnoreCaseAndIsDeleted(String title, boolean isDeleted, Pageable pageable);
+    Page<DocumentEntity> findByFolderIdIsNullAndCreatedByAndTitleContainingIgnoreCaseAndIsDeleted(Long createdBy, String title, boolean isDeleted, Pageable pageable);
 }

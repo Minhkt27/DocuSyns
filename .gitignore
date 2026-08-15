@@ -33,6 +33,7 @@ build/
 .vscode/
 
 google-credentials.json
+.env
 
 ### Runtime data / build artifacts / logs (should never be committed) ###
 storage_data/
@@ -40,3 +41,9 @@ storage_data/
 nginx/logs/*.log
 downloads/
 nginx/downloads/
+
+### Manual debug/scratch scripts (should never be committed) ###
+/body.json
+/test.py
+/test.ps1
+/test2.ps1

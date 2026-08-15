@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../pages/dashboard_page.dart';
 import '../pages/settings_page.dart';
 import '../pages/login_page.dart';
-import '../../services/api_service.dart';
+import '../../services/auth_session.dart';
+import '../../services/sidecar_service.dart';
 import '../widgets/sync_console.dart';
 
 class MainLayout extends StatefulWidget {
@@ -18,42 +20,36 @@ class _MainLayoutState extends State<MainLayout> {
   final List<String> _logs = [];
   int _selectedIndex = 0;
 
-  final String _currentRole = ApiService.currentRole ?? 'USER';
-  final String _currentUserName = ApiService.currentUserName ?? 'User';
-
-  Widget _getSelectedPage() {
+  Widget _getSelectedPage(String currentRole) {
     switch (_selectedIndex) {
       case 0:
         return DashboardPage(
           key: const ValueKey('myDocs'),
           onActivity: _addActivityLog,
           isMyDocuments: true,
-          userRole: _currentRole,
+          userRole: currentRole,
         );
       case 1:
         return DashboardPage(
           key: const ValueKey('allDocs'),
           onActivity: _addActivityLog,
           isMyDocuments: false,
-          userRole: _currentRole,
+          userRole: currentRole,
         );
       case 2:
-        return SettingsPage(
-          currentRole: _currentRole,
-          currentUserName: _currentUserName,
-        );
+        return const SettingsPage();
       case 3:
         return DashboardPage(
           key: const ValueKey('trash'),
           onActivity: _addActivityLog,
           isTrashMode: true,
-          userRole: _currentRole,
+          userRole: currentRole,
         );
       default:
         return DashboardPage(
           onActivity: _addActivityLog,
           isMyDocuments: true,
-          userRole: _currentRole,
+          userRole: currentRole,
         );
     }
   }
@@ -61,13 +57,19 @@ class _MainLayoutState extends State<MainLayout> {
   void _addActivityLog(String msg) {
     setState(() {
       final timeString = DateTime.now().toLocal().toString().substring(11, 19);
-      _logs.insert(0, '[$timeString] [$_currentUserName] $msg');
+      final userName = context.read<AuthSession>().userName ?? 'User';
+      _logs.insert(0, '[$timeString] [$userName] $msg');
     });
   }
 
   @override
   void initState() {
     super.initState();
+    // Resumes local-folder sync (if configured) for a fresh login or an
+    // app restart with a persisted session - both land here.
+    SidecarService.instance.startIfConfigured(context.read<AuthSession>()).catchError((e) {
+      debugPrint('SidecarService: failed to start: $e');
+    });
   }
 
   @override
@@ -77,6 +79,10 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final session = context.watch<AuthSession>();
+    final currentRole = session.role ?? 'USER';
+    final currentUserName = session.userName ?? 'User';
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: Row(
@@ -114,9 +120,9 @@ class _MainLayoutState extends State<MainLayout> {
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _currentRole == 'ADMIN'
+                    color: currentRole == 'ADMIN'
                         ? Colors.redAccent.withValues(alpha: 0.15)
-                        : _currentRole == 'PROJECT_MANAGER'
+                        : currentRole == 'PROJECT_MANAGER'
                             ? Colors.orangeAccent.withValues(alpha: 0.15)
                             : Colors.blueAccent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
@@ -125,21 +131,21 @@ class _MainLayoutState extends State<MainLayout> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        _currentRole == 'ADMIN'
+                        currentRole == 'ADMIN'
                             ? Icons.admin_panel_settings
-                            : _currentRole == 'PROJECT_MANAGER'
+                            : currentRole == 'PROJECT_MANAGER'
                                 ? Icons.manage_accounts
                                 : Icons.person,
                         size: 16,
-                        color: _currentRole == 'ADMIN'
+                        color: currentRole == 'ADMIN'
                             ? Colors.redAccent
-                            : _currentRole == 'PROJECT_MANAGER'
+                            : currentRole == 'PROJECT_MANAGER'
                                 ? Colors.orangeAccent
                                 : Colors.blueAccent,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _currentRole,
+                        currentRole,
                         style: GoogleFonts.inter(
                           color: Colors.white70,
                           fontSize: 11,
@@ -158,9 +164,9 @@ class _MainLayoutState extends State<MainLayout> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: _currentRole == 'ADMIN' ? Colors.redAccent : Colors.blueAccent,
+                        backgroundColor: currentRole == 'ADMIN' ? Colors.redAccent : Colors.blueAccent,
                         child: Text(
-                          _currentUserName.substring(0, 2).toUpperCase(),
+                          currentUserName.substring(0, 2).toUpperCase(),
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -168,8 +174,8 @@ class _MainLayoutState extends State<MainLayout> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_currentUserName, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
-                          Text(_currentRole, style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                          Text(currentUserName, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+                          Text(currentRole, style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
                         ],
                       ),
                       const Spacer(),
@@ -177,8 +183,8 @@ class _MainLayoutState extends State<MainLayout> {
                         icon: const Icon(Icons.logout, color: Colors.white54),
                         tooltip: 'Logout',
                         onPressed: () async {
-                          final api = ApiService();
-                          await api.logout();
+                          await SidecarService.instance.stop();
+                          await session.logout();
                           if (!context.mounted) return;
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -213,7 +219,7 @@ class _MainLayoutState extends State<MainLayout> {
                   ),
                 ),
                 Expanded(
-                  child: _getSelectedPage(),
+                  child: _getSelectedPage(currentRole),
                 ),
               ],
             ),

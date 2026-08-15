@@ -10,5 +10,6 @@ public record DocumentVersion(
     Long uploadedBy,
     java.time.LocalDateTime uploadedAt,
     String note,
-    boolean isDeleted
+    boolean isDeleted,
+    boolean pinned
 ) {}

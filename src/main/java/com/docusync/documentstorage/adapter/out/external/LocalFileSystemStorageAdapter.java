@@ -1,6 +1,7 @@
 package com.docusync.documentstorage.adapter.out.external;
 
 import com.docusync.documentstorage.application.port.out.FileStoragePort;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,7 @@ import java.util.UUID;
 
 @Component
 @Primary
+@Slf4j
 public class LocalFileSystemStorageAdapter implements FileStoragePort {
 
     private static final String STORAGE_DIR = "/app/local_storage/";
@@ -33,7 +35,7 @@ public class LocalFileSystemStorageAdapter implements FileStoragePort {
             String fileId = UUID.randomUUID().toString();
             Path filePath = Paths.get(STORAGE_DIR, fileId);
             Files.copy(content, filePath);
-            System.out.println("File saved locally: " + filePath.toString());
+            log.info("File saved locally: {}", filePath);
             return fileId;
         } catch (Exception e) {
             throw new RuntimeException("Failed to save file locally", e);

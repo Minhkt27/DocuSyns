@@ -3,6 +3,7 @@ package websocket
 import (
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -10,8 +11,17 @@ import (
 
 var clients = make(map[*websocket.Conn]bool)
 var upgrader = websocket.Upgrader{
+	// The sidecar only binds to 127.0.0.1 (see main.go) and broadcasts no
+	// sensitive data, so there's nothing to steal cross-origin. Still, don't
+	// blanket-allow every origin - only requests with no Origin header
+	// (native desktop clients, curl, etc.) or an explicit loopback origin are
+	// accepted, as defense-in-depth in case the bind address is ever widened.
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow cross-origin for Flutter desktop
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true
+		}
+		return strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1")
 	},
 }
 var mutex = &sync.Mutex{}

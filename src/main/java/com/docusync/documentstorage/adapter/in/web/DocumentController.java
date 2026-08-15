@@ -135,6 +135,24 @@ public class DocumentController {
                 .body(resource);
     }
 
+    @PostMapping("/{id}/versions/{versionId}/pin")
+    public ResponseEntity<Void> pinVersion(
+            @PathVariable("id") Long documentId,
+            @PathVariable("versionId") Long versionId,
+            @RequestAttribute("userId") Long userId) {
+        manageDocumentUseCase.setVersionPinned(documentId, versionId, userId, true);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/versions/{versionId}/unpin")
+    public ResponseEntity<Void> unpinVersion(
+            @PathVariable("id") Long documentId,
+            @PathVariable("versionId") Long versionId,
+            @RequestAttribute("userId") Long userId) {
+        manageDocumentUseCase.setVersionPinned(documentId, versionId, userId, false);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{id}/rollback")
     public ResponseEntity<DocumentVersion> rollbackToVersion(
             @PathVariable("id") Long documentId,

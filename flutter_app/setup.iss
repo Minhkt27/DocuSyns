@@ -1,7 +1,7 @@
 [Setup]
 AppId={{5A88B3DE-1C10-4A0B-9BCB-123456789ABC}
 AppName=DocuSync
-AppVersion=1.0.0
+AppVersion=2.1.0
 AppPublisher=Minhkt27
 DefaultDirName={autopf}\DocuSync
 DefaultGroupName=DocuSync
@@ -21,6 +21,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "build\windows\x64\runner\Release\docusync_client.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\sidecar-golang\sidecar.exe"; DestDir: "{app}\sidecar"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\DocuSync"; Filename: "{app}\docusync_client.exe"

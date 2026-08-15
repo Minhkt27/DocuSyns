@@ -18,4 +18,7 @@ public interface DocumentPersistencePort {
     PageResult<Document> findDocumentsByFolderId(Long folderId, String searchQuery, int page, int size);
     PageResult<Document> findDocumentsByFolderIdAndCreatedBy(Long folderId, Long createdBy, String searchQuery, int page, int size);
     PageResult<Document> findDocumentsByCreatedBy(Long createdBy, String searchQuery, int page, int size);
+    List<Document> findTrashedDocuments();
+    List<Document> searchDocuments(String keyword);
+    List<Document> searchDocumentsByCreatedBy(String keyword, Long createdBy);
 }

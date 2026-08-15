@@ -15,7 +15,7 @@ public class JwtTokenProvider {
     private final Key key;
     private final long jwtExpirationInMs = 86400000L; // 1 day
 
-    public JwtTokenProvider(@Value("${jwt.secret:defaultSecretKeyThatIsAtLeast64BytesLongForHS512AlgorithmDoNotUseInProductionDocuSync!@#}") String secret) {
+    public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
     }
 

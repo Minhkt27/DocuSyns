@@ -69,6 +69,7 @@ public class FolderService {
         FolderEntity entity = folderRepository.findById(folderId)
                 .orElseThrow(() -> new RuntimeException("Folder not found"));
         entity.setDeleted(true);
+        entity.setDeletedAt(LocalDateTime.now());
         folderRepository.save(entity);
         activityLogService.logActivity(userId, "TRASH_FOLDER", folderId, "FOLDER");
     }
@@ -78,7 +79,19 @@ public class FolderService {
         FolderEntity entity = folderRepository.findById(folderId)
                 .orElseThrow(() -> new RuntimeException("Folder not found"));
         entity.setDeleted(false);
+        entity.setDeletedAt(null);
         folderRepository.save(entity);
         activityLogService.logActivity(userId, "RESTORE_FOLDER", folderId, "FOLDER");
+    }
+
+    public List<Folder> getTrashedFolders() {
+        return folderRepository.findByIsDeleted(true).stream().map(mapper::toDomain).toList();
+    }
+
+    public List<Folder> searchFolders(String keyword, Long userId, boolean myOnly) {
+        List<FolderEntity> entities = myOnly
+                ? folderRepository.findByNameContainingIgnoreCaseAndCreatedByAndIsDeleted(keyword, userId, false)
+                : folderRepository.findByNameContainingIgnoreCaseAndIsDeleted(keyword, false);
+        return entities.stream().map(mapper::toDomain).toList();
     }
 }

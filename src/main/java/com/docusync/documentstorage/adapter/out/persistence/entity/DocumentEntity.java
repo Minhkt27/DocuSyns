@@ -33,4 +33,10 @@ public class DocumentEntity {
     @Column(name = "is_deleted", nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
     private boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private java.time.LocalDateTime deletedAt;
+
+    @Column(name = "created_at")
+    private java.time.LocalDateTime createdAt;
 }

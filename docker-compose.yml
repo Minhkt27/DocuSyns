@@ -1,15 +1,14 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
     container_name: docusync_db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: docusync_db
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,6 +20,7 @@ services:
   backend:
     build: .
     container_name: docusync_backend
+    restart: unless-stopped
     volumes:
       - ./storage_data:/app/local_storage
     depends_on:
@@ -29,23 +29,19 @@ services:
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/docusync_db
       - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
-
-  sidecar:
-    build: ./sidecar-golang
-    container_name: docusync_sidecar
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./sidecar-golang/sync_folder:/app/sync_folder
-    depends_on:
-      - backend
-    environment:
-      - API_URL=http://backend:8080
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   nginx:
     image: nginx:1.25-alpine
     container_name: docusync_nginx
+    restart: unless-stopped
     ports:
       - "8080:8080"
     volumes:
@@ -53,7 +49,8 @@ services:
       - ./nginx/logs:/var/log/nginx
       - ./nginx/downloads:/var/www/downloads:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres_data:

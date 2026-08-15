@@ -16,6 +16,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthResponse login(LoginRequest request) {
         UserEntity user = userRepository.findByEmail(request.getEmail())
@@ -30,7 +31,32 @@ public class AuthService {
         }
 
         String token = tokenProvider.generateToken(user.getId(), user.getRole());
+        String refreshToken = refreshTokenService.issue(user.getId());
 
-        return new AuthResponse(token, user.getId(), user.getEmail(), user.getFullName(), user.getRole());
+        return new AuthResponse(token, refreshToken, user.getId(), user.getEmail(), user.getFullName(), user.getRole());
+    }
+
+    /**
+     * Exchanges a still-valid refresh token for a new access token, rotating
+     * the refresh token in the process. Used at app startup so "remember me"
+     * doesn't require storing the user's password.
+     */
+    public AuthResponse refresh(String rawRefreshToken) {
+        RefreshTokenService.IssuedToken rotated = refreshTokenService.rotate(rawRefreshToken);
+
+        UserEntity user = userRepository.findById(rotated.userId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.isActive()) {
+            throw new RuntimeException("User account is disabled");
+        }
+
+        String token = tokenProvider.generateToken(user.getId(), user.getRole());
+
+        return new AuthResponse(token, rotated.rawToken(), user.getId(), user.getEmail(), user.getFullName(), user.getRole());
+    }
+
+    public void logout(String rawRefreshToken) {
+        refreshTokenService.revoke(rawRefreshToken);
     }
 }

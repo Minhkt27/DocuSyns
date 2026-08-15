@@ -1,50 +1,116 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../../services/api_service.dart';
+import '../../services/auth_session.dart';
+import '../../services/sidecar_service.dart';
+import '../widgets/server_folder_picker_dialog.dart';
 
 class SettingsPage extends StatefulWidget {
-  final String currentRole;
-  final String currentUserName;
-  const SettingsPage({
-    super.key,
-    this.currentRole = 'ADMIN',
-    this.currentUserName = 'Admin',
-  });
+  const SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final ApiService _apiService = ApiService();
   bool _isLoadingSettings = false;
-  
+
   final _maxVersionsController = TextEditingController();
   final _trashRetentionController = TextEditingController();
   final _appVersionController = TextEditingController();
   final _appUrlController = TextEditingController();
 
+  String? _syncFolderPath;
+  bool _isUpdatingSync = false;
+
+  final _serverUrlController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    if (widget.currentRole == 'ADMIN') {
+    final session = context.read<AuthSession>();
+    if (session.role == 'ADMIN') {
       _loadSettings();
+    }
+    _loadSyncFolder();
+    _serverUrlController.text = session.baseUrl;
+  }
+
+  Future<void> _saveServerUrl() async {
+    final session = context.read<AuthSession>();
+    await session.setBaseUrl(_serverUrlController.text);
+    _serverUrlController.text = session.baseUrl;
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Server address saved. Log out and back in for it to take full effect.'),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
-  @override
-  void didUpdateWidget(covariant SettingsPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentRole != widget.currentRole && widget.currentRole == 'ADMIN') {
-      _loadSettings();
+  Future<void> _loadSyncFolder() async {
+    final path = await SidecarService.instance.getSyncFolderPath();
+    if (mounted) setState(() => _syncFolderPath = path);
+  }
+
+  Future<void> _pickSyncFolder() async {
+    final session = context.read<AuthSession>();
+    final selected = await FilePicker.platform.getDirectoryPath();
+    if (selected == null) return;
+    if (!mounted) return;
+
+    final apiService = ApiService(session);
+    final serverFolder = await showDialog<FolderModel>(
+      context: context,
+      builder: (_) => ServerFolderPickerDialog(apiService: apiService),
+    );
+    if (serverFolder == null) return;
+
+    setState(() => _isUpdatingSync = true);
+    try {
+      await SidecarService.instance.setSyncFolder(selected, serverFolder.id);
+      await SidecarService.instance.start(selected, serverFolder.id, session);
+      if (mounted) {
+        setState(() => _syncFolderPath = selected);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Syncing "${serverFolder.name}" - downloading existing files...'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to start sync: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdatingSync = false);
+    }
+  }
+
+  Future<void> _stopSync() async {
+    setState(() => _isUpdatingSync = true);
+    try {
+      await SidecarService.instance.stop();
+      await SidecarService.instance.setSyncFolder(null, null);
+      if (mounted) setState(() => _syncFolderPath = null);
+    } finally {
+      if (mounted) setState(() => _isUpdatingSync = false);
     }
   }
 
   Future<void> _loadSettings() async {
     setState(() => _isLoadingSettings = true);
     try {
-      final settings = await _apiService.getSettings();
+      final apiService = ApiService(context.read<AuthSession>());
+      final settings = await apiService.getSettings();
       _maxVersionsController.text = settings['maxVersionsPerFile']?.toString() ?? '5';
       _trashRetentionController.text = settings['trashRetentionDays']?.toString() ?? '30';
       _appVersionController.text = settings['clientAppVersion']?.toString() ?? '';
@@ -58,7 +124,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveSettings() async {
     try {
-      await _apiService.updateSettings(
+      final apiService = ApiService(context.read<AuthSession>());
+      await apiService.updateSettings(
         int.parse(_maxVersionsController.text),
         int.parse(_trashRetentionController.text),
         clientAppVersion: _appVersionController.text.trim(),
@@ -84,11 +151,13 @@ class _SettingsPageState extends State<SettingsPage> {
     _trashRetentionController.dispose();
     _appVersionController.dispose();
     _appUrlController.dispose();
+    _serverUrlController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentRole = context.watch<AuthSession>().role ?? 'USER';
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
@@ -109,8 +178,113 @@ class _SettingsPageState extends State<SettingsPage> {
               'Manage system configurations and permissions.',
               style: GoogleFonts.inter(fontSize: 14, color: Colors.white54),
             ),
-            
-            if (widget.currentRole == 'ADMIN') ...[
+
+            const SizedBox(height: 40),
+            Text(
+              'SERVER CONNECTION',
+              style: GoogleFonts.inter(
+                color: Colors.white38,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: _buildTextSetting(
+                label: 'Server Address',
+                description: 'Base URL of the DocuSync backend, e.g. http://192.168.1.7:8080/api/v1. Changing this requires logging in again.',
+                controller: _serverUrlController,
+                icon: Icons.dns,
+                width: 320,
+                onSubmitted: (_) => _saveServerUrl(),
+                trailing: IconButton(
+                  icon: const Icon(Icons.save, color: Colors.blueAccent),
+                  tooltip: 'Save',
+                  onPressed: _saveServerUrl,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+            Text(
+              'LOCAL FOLDER SYNC',
+              style: GoogleFonts.inter(
+                color: Colors.white38,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.purpleAccent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.folder_open, color: Colors.purpleAccent, size: 20),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sync a local folder',
+                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _syncFolderPath == null
+                              ? 'Not configured. Files added or changed in a chosen folder are uploaded automatically.'
+                              : 'Watching: $_syncFolderPath',
+                          style: GoogleFonts.inter(fontSize: 12, color: Colors.white54),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  if (_isUpdatingSync)
+                    const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  else if (_syncFolderPath == null)
+                    ElevatedButton.icon(
+                      onPressed: _pickSyncFolder,
+                      icon: const Icon(Icons.folder_open, size: 18),
+                      label: Text('Choose Folder', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purpleAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                    )
+                  else
+                    OutlinedButton.icon(
+                      onPressed: _stopSync,
+                      icon: const Icon(Icons.stop_circle_outlined, size: 18),
+                      label: Text('Stop Syncing', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
+                    ),
+                ],
+              ),
+            ),
+
+            if (currentRole == 'ADMIN') ...[
               const SizedBox(height: 40),
               Text(
                 'DATA RETENTION LIFECYCLE',
@@ -211,6 +385,8 @@ class _SettingsPageState extends State<SettingsPage> {
     required TextEditingController controller,
     required IconData icon,
     double width = 200,
+    ValueChanged<String>? onSubmitted,
+    Widget? trailing,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,6 +421,7 @@ class _SettingsPageState extends State<SettingsPage> {
           width: width,
           child: TextField(
             controller: controller,
+            onSubmitted: onSubmitted,
             style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
             decoration: InputDecoration(
               filled: true,
@@ -257,6 +434,10 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ),
+        if (trailing != null) ...[
+          const SizedBox(width: 8),
+          trailing,
+        ],
       ],
     );
   }

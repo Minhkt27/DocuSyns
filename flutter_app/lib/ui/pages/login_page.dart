@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../../services/auth_session.dart';
 import '../layout/main_layout.dart';
 
 class LoginPage extends StatefulWidget {
@@ -15,33 +16,17 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _rememberMe = false;
-  final ApiService _apiService = ApiService();
-  Map<String, String> _savedPasswords = {};
 
   @override
   void initState() {
     super.initState();
-    _loadSavedCredentials();
-    _emailController.addListener(_onEmailChanged);
+    _loadLastEmail();
   }
 
-  void _onEmailChanged() {
-    final email = _emailController.text.trim();
-    if (_savedPasswords.containsKey(email)) {
-      if (_passwordController.text != _savedPasswords[email]!) {
-        _passwordController.text = _savedPasswords[email]!;
-        setState(() {
-          _rememberMe = true;
-        });
-      }
-    }
-  }
-
-  Future<void> _loadSavedCredentials() async {
-    _savedPasswords = await ApiService.readSavedCredentials();
-    final lastEmail = await ApiService.readLastEmail();
-    if (lastEmail != null && lastEmail.isNotEmpty) {
-      _emailController.text = lastEmail;
+  Future<void> _loadLastEmail() async {
+    final lastEmail = await AuthSession.readLastEmail();
+    if (lastEmail != null && lastEmail.isNotEmpty && mounted) {
+      setState(() => _emailController.text = lastEmail);
     }
   }
 
@@ -59,14 +44,11 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      final success = await _apiService.login(email, password);
+      final session = context.read<AuthSession>();
+      final success = await session.login(email, password);
       if (success) {
-        await ApiService.saveLastEmail(email);
-        if (_rememberMe) {
-          await ApiService.saveCredentials(email, password);
-        } else {
-          await ApiService.clearCredentials(email);
-        }
+        await AuthSession.saveLastEmail(email);
+        await session.setRememberMe(_rememberMe);
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const MainLayout()),
@@ -94,7 +76,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();

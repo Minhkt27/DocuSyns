@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'auth_session.dart';
 
 class FolderModel {
   final int id;
@@ -40,6 +41,7 @@ class DocumentVersionModel {
   final int? uploadedBy;
   final String? uploadedAt;
   final String? note;
+  final bool pinned;
 
   DocumentVersionModel({
     required this.id,
@@ -51,6 +53,7 @@ class DocumentVersionModel {
     this.uploadedBy,
     this.uploadedAt,
     this.note,
+    this.pinned = false,
   });
 
   factory DocumentVersionModel.fromJson(Map<String, dynamic> json) {
@@ -64,6 +67,7 @@ class DocumentVersionModel {
       uploadedBy: json['uploadedBy'],
       uploadedAt: json['uploadedAt'],
       note: json['note'],
+      pinned: json['pinned'] ?? false,
     );
   }
 }
@@ -77,6 +81,7 @@ class DocumentModel {
   final int? folderId;
   final int? lockedBy;
   final String? lockedByName;
+  final String? createdAt;
 
   DocumentModel({
     required this.id,
@@ -87,6 +92,7 @@ class DocumentModel {
     this.folderId,
     this.lockedBy,
     this.lockedByName,
+    this.createdAt,
   });
 
   factory DocumentModel.fromJson(Map<String, dynamic> json) {
@@ -99,6 +105,7 @@ class DocumentModel {
       folderId: json['folderId'],
       lockedBy: json['lockedBy'],
       lockedByName: json['lockedByName'],
+      createdAt: json['createdAt'],
     );
   }
 
@@ -122,6 +129,7 @@ class DocumentModel {
       folderId: folderId ?? this.folderId,
       lockedBy: clearLockedBy ? null : (lockedBy ?? this.lockedBy),
       lockedByName: clearLockedBy ? null : (lockedByName ?? this.lockedByName),
+      createdAt: createdAt,
     );
   }
 }
@@ -159,6 +167,7 @@ class ActivityLogModel {
   final String action;
   final int? targetId;
   final String? targetType;
+  final String? targetName;
   final String createdAt;
 
   ActivityLogModel({
@@ -168,6 +177,7 @@ class ActivityLogModel {
     required this.action,
     required this.targetId,
     required this.targetType,
+    required this.targetName,
     required this.createdAt,
   });
 
@@ -179,119 +189,35 @@ class ActivityLogModel {
       action: json['action'],
       targetId: json['targetId'],
       targetType: json['targetType'],
+      targetName: json['targetName'],
       createdAt: json['createdAt'],
     );
   }
 }
 
+/// HTTP client for the DocuSync API. Reads the current token/base URL from
+/// the [AuthSession] passed in rather than holding its own mutable state.
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.7:8080/api/v1';
-  static String? token;
-  static String? currentRole;
-  static String? currentUserName;
-  static int? currentUserId;
+  ApiService(this.session);
+
+  final AuthSession session;
+
   static void Function()? onUnauthorized;
-  
-  static const _storage = FlutterSecureStorage();
 
   void _checkUnauthorized(http.Response response) {
     if (response.statusCode == 401) {
-      logout();
+      session.logout();
       onUnauthorized?.call();
       throw Exception('Session expired. Please login again.');
     }
   }
 
   Map<String, String> get _headers => {
-    'Authorization': 'Bearer $token',
+    'Authorization': 'Bearer ${session.token}',
     'Content-Type': 'application/json',
   };
 
-  static Future<void> init() async {
-    token = await _storage.read(key: 'jwt_token');
-    currentRole = await _storage.read(key: 'user_role');
-    currentUserName = await _storage.read(key: 'user_name');
-    final idStr = await _storage.read(key: 'user_id');
-    if (idStr != null) {
-      currentUserId = int.tryParse(idStr);
-    }
-  }
-
-  Future<bool> login(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        token = data['token'];
-        currentRole = data['role'];
-        currentUserName = data['fullName'];
-        currentUserId = data['userId'];
-
-        await _storage.write(key: 'jwt_token', value: token);
-        await _storage.write(key: 'user_role', value: currentRole);
-        await _storage.write(key: 'user_name', value: currentUserName);
-        if (currentUserId != null) {
-          await _storage.write(key: 'user_id', value: currentUserId.toString());
-        }
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<void> logout() async {
-    token = null;
-    currentRole = null;
-    currentUserName = null;
-    currentUserId = null;
-    await _storage.delete(key: 'jwt_token');
-    await _storage.delete(key: 'user_role');
-    await _storage.delete(key: 'user_name');
-    await _storage.delete(key: 'user_id');
-  }
-
-  static Future<void> saveCredentials(String email, String password) async {
-    final savedJson = await _storage.read(key: 'saved_credentials_map');
-    Map<String, dynamic> map = {};
-    if (savedJson != null) {
-      map = jsonDecode(savedJson);
-    }
-    map[email] = password;
-    await _storage.write(key: 'saved_credentials_map', value: jsonEncode(map));
-  }
-
-  static Future<void> clearCredentials(String email) async {
-    final savedJson = await _storage.read(key: 'saved_credentials_map');
-    if (savedJson != null) {
-      Map<String, dynamic> map = jsonDecode(savedJson);
-      map.remove(email);
-      await _storage.write(key: 'saved_credentials_map', value: jsonEncode(map));
-    }
-  }
-
-  static Future<Map<String, String>> readSavedCredentials() async {
-    final savedJson = await _storage.read(key: 'saved_credentials_map');
-    if (savedJson != null) {
-      Map<String, dynamic> map = jsonDecode(savedJson);
-      return map.map((key, value) => MapEntry(key, value.toString()));
-    }
-    return {};
-  }
-
-  static Future<void> saveLastEmail(String email) async {
-    await _storage.write(key: 'last_logged_in_email', value: email);
-  }
-
-  static Future<String?> readLastEmail() async {
-    return await _storage.read(key: 'last_logged_in_email');
-  }
+  String get baseUrl => session.baseUrl;
 
   // Folder APIs
   Future<List<FolderModel>> getFolders({int? parentId}) async {
@@ -301,9 +227,9 @@ class ApiService {
     }
     final response = await http.get(
       Uri.parse(url),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: _headers,
     );
-    
+
     _checkUnauthorized(response);
 
     if (response.statusCode == 200) {
@@ -342,7 +268,7 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$baseUrl/folders'),
       headers: {
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer ${session.token}',
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
@@ -365,7 +291,7 @@ class ApiService {
     if (folderId != null) url += '?folderId=$folderId';
 
     var request = http.MultipartRequest('POST', Uri.parse(url));
-    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Authorization'] = 'Bearer ${session.token}';
 
     request.files.add(http.MultipartFile.fromBytes(
       'file',
@@ -386,7 +312,7 @@ class ApiService {
   Future<bool> lockDocument(int documentId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/documents/$documentId/lock'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer ${session.token}'},
     );
     _checkUnauthorized(response);
     if (response.statusCode != 200) {
@@ -399,7 +325,7 @@ class ApiService {
   Future<bool> unlockDocument(int documentId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/documents/$documentId/unlock'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer ${session.token}'},
     );
     _checkUnauthorized(response);
     return response.statusCode == 200;
@@ -408,7 +334,7 @@ class ApiService {
   Future<Uint8List> downloadDocument(int documentId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/documents/$documentId/download'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer ${session.token}'},
     );
     _checkUnauthorized(response);
 
@@ -421,7 +347,7 @@ class ApiService {
 
   Future<void> updateDocumentVersion(int documentId, String fileName, Uint8List fileBytes, {String? note}) async {
     var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/documents/$documentId/upload'));
-    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Authorization'] = 'Bearer ${session.token}';
 
     if (note != null && note.isNotEmpty) {
       request.fields['note'] = note;
@@ -444,7 +370,7 @@ class ApiService {
   Future<List<DocumentVersionModel>> getVersionHistory(int documentId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/documents/$documentId/versions'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer ${session.token}'},
     );
     _checkUnauthorized(response);
 
@@ -459,7 +385,7 @@ class ApiService {
   Future<Uint8List> downloadSpecificVersion(int documentId, int versionId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/documents/$documentId/versions/$versionId/download'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer ${session.token}'},
     );
     _checkUnauthorized(response);
 
@@ -470,10 +396,28 @@ class ApiService {
     }
   }
 
+  Future<void> pinVersion(int documentId, int versionId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/documents/$documentId/versions/$versionId/pin'),
+      headers: {'Authorization': 'Bearer ${session.token}'},
+    );
+    _checkUnauthorized(response);
+    if (response.statusCode != 200) throw Exception('Failed to pin version');
+  }
+
+  Future<void> unpinVersion(int documentId, int versionId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/documents/$documentId/versions/$versionId/unpin'),
+      headers: {'Authorization': 'Bearer ${session.token}'},
+    );
+    _checkUnauthorized(response);
+    if (response.statusCode != 200) throw Exception('Failed to unpin version');
+  }
+
   Future<void> rollbackToVersion(int documentId, int versionId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/documents/$documentId/rollback?versionId=$versionId'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer ${session.token}'},
     );
     _checkUnauthorized(response);
     if (response.statusCode != 200) {
@@ -484,31 +428,31 @@ class ApiService {
 
   // TRASH API
   Future<void> moveFolderToTrash(int folderId) async {
-    final response = await http.put(Uri.parse('$baseUrl/folders/$folderId/trash'), headers: {'Authorization': 'Bearer $token'});
+    final response = await http.put(Uri.parse('$baseUrl/folders/$folderId/trash'), headers: {'Authorization': 'Bearer ${session.token}'});
     _checkUnauthorized(response);
     if (response.statusCode != 200) throw Exception('Failed to move folder to trash');
   }
 
   Future<void> restoreFolderFromTrash(int folderId) async {
-    final response = await http.put(Uri.parse('$baseUrl/folders/$folderId/restore'), headers: {'Authorization': 'Bearer $token'});
+    final response = await http.put(Uri.parse('$baseUrl/folders/$folderId/restore'), headers: {'Authorization': 'Bearer ${session.token}'});
     _checkUnauthorized(response);
     if (response.statusCode != 200) throw Exception('Failed to restore folder');
   }
 
   Future<void> moveDocumentToTrash(int documentId) async {
-    final response = await http.put(Uri.parse('$baseUrl/documents/$documentId/trash'), headers: {'Authorization': 'Bearer $token'});
+    final response = await http.put(Uri.parse('$baseUrl/documents/$documentId/trash'), headers: {'Authorization': 'Bearer ${session.token}'});
     _checkUnauthorized(response);
     if (response.statusCode != 200) throw Exception('Failed to move document to trash');
   }
 
   Future<void> restoreDocumentFromTrash(int documentId) async {
-    final response = await http.put(Uri.parse('$baseUrl/documents/$documentId/restore'), headers: {'Authorization': 'Bearer $token'});
+    final response = await http.put(Uri.parse('$baseUrl/documents/$documentId/restore'), headers: {'Authorization': 'Bearer ${session.token}'});
     _checkUnauthorized(response);
     if (response.statusCode != 200) throw Exception('Failed to restore document');
   }
 
   Future<Map<String, List<dynamic>>> getTrashItems() async {
-    final response = await http.get(Uri.parse('$baseUrl/trash'), headers: {'Authorization': 'Bearer $token'});
+    final response = await http.get(Uri.parse('$baseUrl/trash'), headers: {'Authorization': 'Bearer ${session.token}'});
     _checkUnauthorized(response);
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
@@ -522,7 +466,8 @@ class ApiService {
 
   // ACTIVITY LOG API
   Future<List<ActivityLogModel>> getRecentActivities() async {
-    final response = await http.get(Uri.parse('$baseUrl/activities'), headers: {'Authorization': 'Bearer $token'});
+    final response = await http.get(Uri.parse('$baseUrl/activities'), headers: {'Authorization': 'Bearer ${session.token}'});
+    _checkUnauthorized(response);
     if (response.statusCode == 200) {
       final List<dynamic> list = jsonDecode(response.body);
       return list.map((item) => ActivityLogModel.fromJson(item)).toList();
@@ -532,8 +477,9 @@ class ApiService {
 
   // SEARCH API
   Future<Map<String, List<dynamic>>> globalSearch(String query, {bool myOnly = false}) async {
-    final url = '$baseUrl/search?q=$query' + (myOnly ? '&myOnly=true' : '');
-    final response = await http.get(Uri.parse(url), headers: {'Authorization': 'Bearer $token'});
+    final url = '$baseUrl/search?q=$query${myOnly ? '&myOnly=true' : ''}';
+    final response = await http.get(Uri.parse(url), headers: {'Authorization': 'Bearer ${session.token}'});
+    _checkUnauthorized(response);
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       return {
@@ -546,7 +492,8 @@ class ApiService {
 
   // System Settings APIs
   Future<Map<String, dynamic>> getSettings() async {
-    final response = await http.get(Uri.parse('$baseUrl/settings'), headers: {'Authorization': 'Bearer $token'});
+    final response = await http.get(Uri.parse('$baseUrl/settings'), headers: {'Authorization': 'Bearer ${session.token}'});
+    _checkUnauthorized(response);
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
@@ -564,7 +511,7 @@ class ApiService {
     final response = await http.put(
       Uri.parse('$baseUrl/settings'),
       headers: {
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer ${session.token}',
         'Content-Type': 'application/json',
       },
       body: jsonEncode(body),

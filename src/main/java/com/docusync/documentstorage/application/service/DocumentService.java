@@ -9,9 +9,12 @@ import com.docusync.documentstorage.application.port.in.ManageDocumentUseCase;
 import com.docusync.documentstorage.application.port.out.DocumentLockPort;
 import com.docusync.documentstorage.application.port.out.DocumentPersistencePort;
 import com.docusync.documentstorage.application.port.out.FileStoragePort;
+import com.docusync.documentstorage.application.port.out.SyncNotificationPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.InputStream;
 import java.util.List;
@@ -25,6 +28,7 @@ public class DocumentService implements ManageDocumentUseCase {
     private final FileStoragePort fileStoragePort;
     private final ActivityLogService activityLogService;
     private final SystemSettingsService systemSettingsService;
+    private final SyncNotificationPort syncNotificationPort;
 
     @Override
     @Transactional
@@ -45,36 +49,58 @@ public class DocumentService implements ManageDocumentUseCase {
         // Upload to storage
         String storageFileId = fileStoragePort.uploadFile(fileName, content, "application/octet-stream");
 
-        // Enforce Max Versions Limit
+        // Enforce Max Versions Limit - pinned versions are excluded from both
+        // the count and from eviction, so they're kept forever regardless of
+        // how many newer versions come after them.
         int maxVersions = systemSettingsService.getSettings().maxVersionsPerFile();
-        List<DocumentVersion> activeVersions = documentPersistencePort.findDocumentVersionsByDocumentId(documentId);
-        
+        List<DocumentVersion> activeVersions = documentPersistencePort.findDocumentVersionsByDocumentId(documentId)
+                .stream().filter(v -> !v.pinned()).toList();
+
         // We are adding 1 new version, so we can keep at most (maxVersions - 1) existing versions
         if (activeVersions.size() >= maxVersions) {
             int versionsToKeep = Math.max(0, maxVersions - 1);
             if (versionsToKeep < activeVersions.size()) {
                 List<DocumentVersion> versionsToDelete = activeVersions.subList(versionsToKeep, activeVersions.size());
                 for (DocumentVersion v : versionsToDelete) {
-                    DocumentVersion deletedV = new DocumentVersion(v.id(), v.documentId(), v.versionNumber(), v.storageFileId(), v.fileName(), v.fileSize(), v.uploadedBy(), v.uploadedAt(), v.note(), true);
+                    DocumentVersion deletedV = new DocumentVersion(v.id(), v.documentId(), v.versionNumber(), v.storageFileId(), v.fileName(), v.fileSize(), v.uploadedBy(), v.uploadedAt(), v.note(), true, v.pinned());
                     documentPersistencePort.saveDocumentVersion(deletedV);
                 }
             }
         }
 
         // Save Version
-        DocumentVersion version = new DocumentVersion(null, documentId, getNextVersion(documentId), storageFileId, fileName, fileSize, userId, java.time.LocalDateTime.now(), note, false);
+        DocumentVersion version = new DocumentVersion(null, documentId, getNextVersion(documentId), storageFileId, fileName, fileSize, userId, java.time.LocalDateTime.now(), note, false, false);
         version = documentPersistencePort.saveDocumentVersion(version);
 
         // Update Document Current Version
-        Document updatedDocument = new Document(document.id(), document.documentCode(), document.title(), version.id(), document.createdBy(), document.folderId(), document.isDeleted(), document.lockedBy(), document.lockedByName());
+        Document updatedDocument = new Document(document.id(), document.documentCode(), document.title(), version.id(), document.createdBy(), document.folderId(), document.isDeleted(), document.lockedBy(), document.lockedByName(), document.deletedAt(), document.createdAt());
         documentPersistencePort.saveDocument(updatedDocument);
 
         // Auto release lock after upload has been disabled per user request
         // documentLockPort.releaseLock(documentId, userId, false);
 
         activityLogService.logActivity(userId, "UPLOAD_VERSION", documentId, "DOCUMENT");
+        notifyAfterCommit(documentId, version.id(), document.folderId());
 
         return version;
+    }
+
+    /**
+     * Broadcasts the "document changed" sync event only once the transaction
+     * has actually committed, so a sidecar that immediately downloads on
+     * receiving it always sees the new content, not a stale pre-commit read.
+     */
+    private void notifyAfterCommit(Long documentId, Long versionId, Long folderId) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    syncNotificationPort.notifyDocumentChanged(documentId, versionId, folderId);
+                }
+            });
+        } else {
+            syncNotificationPort.notifyDocumentChanged(documentId, versionId, folderId);
+        }
     }
 
     @Override
@@ -98,13 +124,14 @@ public class DocumentService implements ManageDocumentUseCase {
             throw new IllegalArgumentException("Version does not belong to this document");
         }
 
-        Document updatedDocument = new Document(document.id(), document.documentCode(), document.title(), version.id(), document.createdBy(), document.folderId(), document.isDeleted(), document.lockedBy(), document.lockedByName());
+        Document updatedDocument = new Document(document.id(), document.documentCode(), document.title(), version.id(), document.createdBy(), document.folderId(), document.isDeleted(), document.lockedBy(), document.lockedByName(), document.deletedAt(), document.createdAt());
         documentPersistencePort.saveDocument(updatedDocument);
 
         // Auto release lock after rollback has been disabled per user request
         // documentLockPort.releaseLock(documentId, userId, false);
 
         activityLogService.logActivity(userId, "ROLLBACK_VERSION", documentId, "DOCUMENT");
+        notifyAfterCommit(documentId, version.id(), document.folderId());
 
         return version;
     }
@@ -159,18 +186,19 @@ public class DocumentService implements ManageDocumentUseCase {
         String storageFileId = fileStoragePort.uploadFile(fileName, content, "application/octet-stream");
         
         // 1. Create Document with folderId
-        Document document = new Document(null, "DOC-" + System.currentTimeMillis(), title, null, userId, folderId, false, null, null);
+        Document document = new Document(null, "DOC-" + System.currentTimeMillis(), title, null, userId, folderId, false, null, null, null, java.time.LocalDateTime.now());
         document = documentPersistencePort.saveDocument(document);
 
         // 2. Create Version
-        DocumentVersion version = new DocumentVersion(null, document.id(), 1, storageFileId, fileName, fileSize, userId, java.time.LocalDateTime.now(), "Initial Upload", false);
+        DocumentVersion version = new DocumentVersion(null, document.id(), 1, storageFileId, fileName, fileSize, userId, java.time.LocalDateTime.now(), "Initial Upload", false, false);
         version = documentPersistencePort.saveDocumentVersion(version);
 
         // 3. Update Document with current version
-        Document updatedDocument = new Document(document.id(), document.documentCode(), document.title(), version.id(), document.createdBy(), document.folderId(), document.isDeleted(), document.lockedBy(), document.lockedByName());
+        Document updatedDocument = new Document(document.id(), document.documentCode(), document.title(), version.id(), document.createdBy(), document.folderId(), document.isDeleted(), document.lockedBy(), document.lockedByName(), document.deletedAt(), document.createdAt());
         updatedDocument = documentPersistencePort.saveDocument(updatedDocument);
 
         activityLogService.logActivity(userId, "CREATE_DOCUMENT", updatedDocument.id(), "DOCUMENT");
+        notifyAfterCommit(updatedDocument.id(), version.id(), updatedDocument.folderId());
 
         return updatedDocument;
     }
@@ -217,8 +245,9 @@ public class DocumentService implements ManageDocumentUseCase {
         }
         
         Document updatedDocument = new Document(
-            document.id(), document.documentCode(), document.title(), 
-            document.currentVersionId(), document.createdBy(), document.folderId(), true, document.lockedBy(), document.lockedByName()
+            document.id(), document.documentCode(), document.title(),
+            document.currentVersionId(), document.createdBy(), document.folderId(), true, document.lockedBy(), document.lockedByName(),
+            java.time.LocalDateTime.now(), document.createdAt()
         );
         documentPersistencePort.saveDocument(updatedDocument);
         activityLogService.logActivity(userId, "TRASH_DOCUMENT", documentId, "DOCUMENT");
@@ -231,10 +260,43 @@ public class DocumentService implements ManageDocumentUseCase {
                 .orElseThrow(() -> new RuntimeException("Document not found"));
         
         Document updatedDocument = new Document(
-            document.id(), document.documentCode(), document.title(), 
-            document.currentVersionId(), document.createdBy(), document.folderId(), false, document.lockedBy(), document.lockedByName()
+            document.id(), document.documentCode(), document.title(),
+            document.currentVersionId(), document.createdBy(), document.folderId(), false, document.lockedBy(), document.lockedByName(),
+            null, document.createdAt()
         );
         documentPersistencePort.saveDocument(updatedDocument);
         activityLogService.logActivity(userId, "RESTORE_DOCUMENT", documentId, "DOCUMENT");
+    }
+
+    @Override
+    public List<Document> getTrashedDocuments() {
+        return documentPersistencePort.findTrashedDocuments();
+    }
+
+    @Override
+    public List<Document> searchDocuments(String keyword, Long userId, boolean myOnly) {
+        return myOnly
+                ? documentPersistencePort.searchDocumentsByCreatedBy(keyword, userId)
+                : documentPersistencePort.searchDocuments(keyword);
+    }
+
+    @Override
+    @Transactional
+    public void setVersionPinned(Long documentId, Long versionId, Long userId, boolean pinned) {
+        DocumentVersion version = documentPersistencePort.findDocumentVersionById(versionId)
+                .orElseThrow(() -> new RuntimeException("Version not found"));
+
+        if (!version.documentId().equals(documentId)) {
+            throw new IllegalArgumentException("Version does not belong to this document");
+        }
+
+        DocumentVersion updated = new DocumentVersion(
+                version.id(), version.documentId(), version.versionNumber(), version.storageFileId(),
+                version.fileName(), version.fileSize(), version.uploadedBy(), version.uploadedAt(),
+                version.note(), version.isDeleted(), pinned
+        );
+        documentPersistencePort.saveDocumentVersion(updated);
+
+        activityLogService.logActivity(userId, pinned ? "PIN_VERSION" : "UNPIN_VERSION", documentId, "DOCUMENT");
     }
 }

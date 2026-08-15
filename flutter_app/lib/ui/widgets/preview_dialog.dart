@@ -10,11 +10,11 @@ class PreviewDialog extends StatefulWidget {
   final VoidCallback onDownload;
 
   const PreviewDialog({
-    Key? key,
+    super.key,
     required this.document,
     required this.apiService,
     required this.onDownload,
-  }) : super(key: key);
+  });
 
   @override
   State<PreviewDialog> createState() => _PreviewDialogState();

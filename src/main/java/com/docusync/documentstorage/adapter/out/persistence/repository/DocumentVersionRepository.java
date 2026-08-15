@@ -9,5 +9,6 @@ public interface DocumentVersionRepository extends JpaRepository<DocumentVersion
     List<DocumentVersionEntity> findByDocumentIdAndIsDeletedFalse(Long documentId);
     List<DocumentVersionEntity> findByDocumentIdAndIsDeletedFalseOrderByVersionNumberDesc(Long documentId);
     DocumentVersionEntity findTopByDocumentIdAndIsDeletedFalseOrderByVersionNumberDesc(Long documentId);
+    DocumentVersionEntity findTopByDocumentIdOrderByVersionNumberAsc(Long documentId);
     List<DocumentVersionEntity> findByIsDeletedTrue();
 }

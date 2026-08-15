@@ -12,12 +12,14 @@ import com.google.api.services.drive.model.File;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.util.Collections;
 
 @Component
+@Slf4j
 public class GoogleDriveStorageAdapter implements FileStoragePort {
 
     private static final String APPLICATION_NAME = "DocuSync Storage App";
@@ -33,7 +35,7 @@ public class GoogleDriveStorageAdapter implements FileStoragePort {
             InputStream credentialsStream = getClass().getResourceAsStream("/google-credentials.json");
             
             if (credentialsStream == null) {
-                System.err.println("google-credentials.json not found in resources!");
+                log.error("google-credentials.json not found in resources!");
                 return;
             }
 
@@ -44,9 +46,9 @@ public class GoogleDriveStorageAdapter implements FileStoragePort {
                     .setApplicationName(APPLICATION_NAME)
                     .build();
             
-            System.out.println("Google Drive API initialized successfully.");
+            log.info("Google Drive API initialized successfully.");
         } catch (Exception e) {
-            System.err.println("Error initializing Google Drive API: " + e.getMessage());
+            log.error("Error initializing Google Drive API", e);
         }
     }
 
@@ -63,7 +65,7 @@ public class GoogleDriveStorageAdapter implements FileStoragePort {
                     .setFields("id")
                     .execute();
             
-            System.out.println("File uploaded to Google Drive. ID: " + file.getId());
+            log.info("File uploaded to Google Drive. ID: {}", file.getId());
             return file.getId();
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload file to Google Drive", e);
@@ -83,7 +85,7 @@ public class GoogleDriveStorageAdapter implements FileStoragePort {
     public void deleteFile(String storageFileId) {
         try {
             driveService.files().delete(storageFileId).execute();
-            System.out.println("File deleted from Google Drive. ID: " + storageFileId);
+            log.info("File deleted from Google Drive. ID: {}", storageFileId);
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete file from Google Drive", e);
         }
