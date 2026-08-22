@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/api_service.dart';
+import '../../theme/app_colors.dart';
 
 /// Lets the user browse the server's folder tree and pick one project
 /// folder to sync locally. Returns the selected [FolderModel] via
@@ -63,7 +64,7 @@ class _ServerFolderPickerDialogState extends State<ServerFolderPickerDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
         width: 480,
@@ -72,7 +73,7 @@ class _ServerFolderPickerDialogState extends State<ServerFolderPickerDialog> {
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white10))),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
               child: Row(
                 children: [
                   const Icon(Icons.folder_shared, color: Colors.purpleAccent),
@@ -80,11 +81,11 @@ class _ServerFolderPickerDialogState extends State<ServerFolderPickerDialog> {
                   Expanded(
                     child: Text(
                       'Choose a project folder to sync',
-                      style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 16),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54),
+                    icon: const Icon(Icons.close, color: AppColors.textSecondary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -99,7 +100,7 @@ class _ServerFolderPickerDialogState extends State<ServerFolderPickerDialog> {
                     child: Text(
                       'Root',
                       style: GoogleFonts.inter(
-                        color: _breadcrumbs.isEmpty ? Colors.white : Colors.blueAccent,
+                        color: _breadcrumbs.isEmpty ? AppColors.textPrimary : AppColors.primary,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -112,14 +113,14 @@ class _ServerFolderPickerDialogState extends State<ServerFolderPickerDialog> {
                       children: [
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 6),
-                          child: Icon(Icons.chevron_right, size: 16, color: Colors.white38),
+                          child: Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
                         ),
                         InkWell(
                           onTap: () => _goToBreadcrumb(entry.key),
                           child: Text(
                             entry.value.name,
                             style: GoogleFonts.inter(
-                              color: isLast ? Colors.white : Colors.blueAccent,
+                              color: isLast ? AppColors.textPrimary : AppColors.primary,
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
                             ),
@@ -140,7 +141,7 @@ class _ServerFolderPickerDialogState extends State<ServerFolderPickerDialog> {
                         )
                       : _folders.isEmpty
                           ? const Center(
-                              child: Text('No subfolders here', style: TextStyle(color: Colors.white38)),
+                              child: Text('No subfolders here', style: TextStyle(color: AppColors.textMuted)),
                             )
                           : ListView.builder(
                               itemCount: _folders.length,
@@ -148,13 +149,13 @@ class _ServerFolderPickerDialogState extends State<ServerFolderPickerDialog> {
                                 final folder = _folders[index];
                                 return ListTile(
                                   leading: const Icon(Icons.folder, color: Colors.amber),
-                                  title: Text(folder.name, style: const TextStyle(color: Colors.white)),
+                                  title: Text(folder.name, style: const TextStyle(color: AppColors.textPrimary)),
                                   onTap: () => _drillInto(folder),
                                   trailing: TextButton(
                                     onPressed: () => Navigator.pop(context, folder),
                                     child: Text(
                                       'Chọn',
-                                      style: GoogleFonts.inter(color: Colors.blueAccent, fontWeight: FontWeight.w600),
+                                      style: GoogleFonts.inter(color: AppColors.primary, fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 );

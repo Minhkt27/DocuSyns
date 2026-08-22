@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'theme/app_colors.dart';
 import 'ui/layout/main_layout.dart';
 import 'ui/pages/login_page.dart';
 import 'services/api_service.dart';
@@ -34,11 +35,13 @@ class DocuSyncApp extends StatelessWidget {
         title: 'DocuSync',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF0F172A),
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFF3B82F6),
-            surface: Color(0xFF1E293B),
+          brightness: Brightness.light,
+          scaffoldBackgroundColor: AppColors.background,
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primary,
+            secondary: AppColors.primaryLight,
+            surface: AppColors.surface,
+            onSurface: AppColors.textPrimary,
           ),
           useMaterial3: true,
         ),

@@ -9,6 +9,7 @@ import '../../controllers/dashboard_controller.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_session.dart';
 import '../../services/update_checker.dart';
+import '../../theme/app_colors.dart';
 import '../widgets/preview_dialog.dart';
 import '../widgets/dashboard/breadcrumb_bar.dart';
 import '../widgets/dashboard/folder_card.dart';
@@ -100,23 +101,23 @@ class _DashboardPageState extends State<DashboardPage> {
       builder: (ctx) {
         final controller = TextEditingController();
         return AlertDialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.surface,
           title: Text(
             _controller.currentFolderId == null ? 'Create New Project' : 'Create Sub-Folder',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+            style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
           ),
           content: TextField(
             controller: controller,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: 'Folder name...',
-              hintStyle: const TextStyle(color: Colors.white38),
+              hintStyle: const TextStyle(color: AppColors.textMuted),
               enabledBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.white24),
+                borderSide: const BorderSide(color: AppColors.border),
                 borderRadius: BorderRadius.circular(8),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.blueAccent),
+                borderSide: const BorderSide(color: AppColors.primary),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -124,14 +125,14 @@ class _DashboardPageState extends State<DashboardPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancel', style: GoogleFonts.inter(color: Colors.white54)),
+              child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
               onPressed: () {
                 folderName = controller.text.trim();
                 Navigator.pop(ctx);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3B82F6)),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
               child: Text('Create', style: GoogleFonts.inter(color: Colors.white)),
             ),
           ],
@@ -277,27 +278,27 @@ class _DashboardPageState extends State<DashboardPage> {
         builder: (ctx) {
           final controller = TextEditingController();
           return AlertDialog(
-            backgroundColor: const Color(0xFF1E293B),
-            title: Text('Upload New Version', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+            backgroundColor: AppColors.surface,
+            title: Text('Upload New Version', style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
             content: TextField(
               controller: controller,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.textPrimary),
               decoration: InputDecoration(
                 hintText: 'What changed in this version?',
-                hintStyle: const TextStyle(color: Colors.white38),
-                enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white24), borderRadius: BorderRadius.circular(8)),
-                focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.blueAccent), borderRadius: BorderRadius.circular(8)),
+                hintStyle: const TextStyle(color: AppColors.textMuted),
+                enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: AppColors.border), borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: AppColors.primary), borderRadius: BorderRadius.circular(8)),
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel', style: GoogleFonts.inter(color: Colors.white54))),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary))),
               ElevatedButton(
                 onPressed: () {
                   updateNote = controller.text.trim();
                   proceed = true;
                   Navigator.pop(ctx);
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3B82F6)),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
                 child: Text('Upload', style: GoogleFonts.inter(color: Colors.white)),
               ),
             ],
@@ -350,13 +351,13 @@ class _DashboardPageState extends State<DashboardPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: Text('Version History: ${doc.title}', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        backgroundColor: AppColors.surface,
+        title: Text('Version History: ${doc.title}', style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
         content: SizedBox(
           width: 500,
           height: 400,
           child: history.isEmpty
-              ? const Center(child: Text('No version history', style: TextStyle(color: Colors.white54)))
+              ? const Center(child: Text('No version history', style: TextStyle(color: AppColors.textSecondary)))
               : ListView.builder(
                   itemCount: history.length,
                   itemBuilder: (context, index) {
@@ -367,7 +368,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: isCurrent ? Colors.blue.withValues(alpha: 0.1) : Colors.transparent,
-                        border: Border.all(color: isCurrent ? Colors.blueAccent : Colors.white10),
+                        border: Border.all(color: isCurrent ? AppColors.primary : AppColors.border),
                         borderRadius: BorderRadius.circular(8)
                       ),
                       child: Column(
@@ -379,7 +380,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('Version ${version.versionNumber}', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  Text('Version ${version.versionNumber}', style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
                                   if (version.pinned) ...[
                                     const SizedBox(width: 6),
                                     const Icon(Icons.push_pin, size: 14, color: Colors.amberAccent),
@@ -389,13 +390,13 @@ class _DashboardPageState extends State<DashboardPage> {
                               if (isCurrent)
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(color: Colors.blueAccent, borderRadius: BorderRadius.circular(4)),
+                                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(4)),
                                   child: const Text('CURRENT', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                                 )
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(version.fileName, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                          Text(version.fileName, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                           if (version.note != null && version.note!.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
@@ -404,13 +405,13 @@ class _DashboardPageState extends State<DashboardPage> {
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              Text(version.uploadedAt?.replaceAll('T', ' ').substring(0, 16) ?? 'Unknown time', style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                              Text(version.uploadedAt?.replaceAll('T', ' ').substring(0, 16) ?? 'Unknown time', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                               const Spacer(),
                               TextButton.icon(
                                 onPressed: () => _downloadSpecificVersion(doc.id, version.id, version.fileName),
                                 icon: const Icon(Icons.download, size: 14),
                                 label: const Text('Download', style: TextStyle(fontSize: 12)),
-                                style: TextButton.styleFrom(foregroundColor: Colors.blueAccent, padding: EdgeInsets.zero, minimumSize: Size.zero),
+                                style: TextButton.styleFrom(foregroundColor: AppColors.primary, padding: EdgeInsets.zero, minimumSize: Size.zero),
                               ),
                               const SizedBox(width: 12),
                               TextButton.icon(
@@ -443,7 +444,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Close', style: GoogleFonts.inter(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Close', style: GoogleFonts.inter(color: AppColors.textSecondary))),
         ],
       ),
     );
@@ -598,7 +599,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Text(
         label,
         style: GoogleFonts.inter(
-          color: Colors.white54,
+          color: AppColors.textSecondary,
           fontSize: 12,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -629,7 +630,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: GoogleFonts.inter(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -637,7 +638,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         widget.isMyDocuments
                             ? 'Your uploaded documents, organized by project.'
                             : 'All company documents and project folders.',
-                        style: GoogleFonts.inter(fontSize: 14, color: Colors.white54),
+                        style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -654,13 +655,13 @@ class _DashboardPageState extends State<DashboardPage> {
                               controller.setSearchQuery(value);
                             });
                           },
-                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                           decoration: InputDecoration(
                             hintText: 'Search files...',
-                            hintStyle: const TextStyle(color: Colors.white38),
-                            prefixIcon: const Icon(Icons.search, color: Colors.white38, size: 20),
+                            hintStyle: const TextStyle(color: AppColors.textMuted),
+                            prefixIcon: const Icon(Icons.search, color: AppColors.textMuted, size: 20),
                             filled: true,
-                            fillColor: const Color(0xFF1E293B),
+                            fillColor: AppColors.surfaceAlt,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -668,11 +669,11 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Colors.white10),
+                              borderSide: const BorderSide(color: AppColors.border),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Colors.blueAccent),
+                              borderSide: const BorderSide(color: AppColors.primary),
                             ),
                           ),
                         ),
@@ -699,7 +700,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         icon: const Icon(Icons.refresh),
                         label: Text('Reload', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF475569),
+                          backgroundColor: AppColors.textSecondary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
@@ -710,7 +711,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         icon: const Icon(Icons.upload_file),
                         label: Text('Upload File', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3B82F6),
+                          backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
@@ -732,13 +733,13 @@ class _DashboardPageState extends State<DashboardPage> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.folder_open, size: 64, color: Colors.white24),
+                                    const Icon(Icons.folder_open, size: 64, color: AppColors.border),
                                     const SizedBox(height: 16),
                                     Text(
                                       controller.currentFolderId == null
                                           ? 'No projects yet. Create one to get started!'
                                           : 'This folder is empty.',
-                                      style: GoogleFonts.inter(color: Colors.white54),
+                                      style: GoogleFonts.inter(color: AppColors.textSecondary),
                                     ),
                                   ],
                                 ),

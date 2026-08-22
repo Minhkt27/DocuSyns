@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_session.dart';
 import '../../services/sidecar_service.dart';
+import '../../theme/app_colors.dart';
 import '../widgets/server_folder_picker_dialog.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -170,20 +171,20 @@ class _SettingsPageState extends State<SettingsPage> {
               style: GoogleFonts.inter(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Manage system configurations and permissions.',
-              style: GoogleFonts.inter(fontSize: 14, color: Colors.white54),
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
             ),
 
             const SizedBox(height: 40),
             Text(
               'SERVER CONNECTION',
               style: GoogleFonts.inter(
-                color: Colors.white38,
+                color: AppColors.textMuted,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1,
@@ -193,19 +194,19 @@ class _SettingsPageState extends State<SettingsPage> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white10),
+                border: Border.all(color: AppColors.border),
               ),
               child: _buildTextSetting(
                 label: 'Server Address',
-                description: 'Base URL of the DocuSync backend, e.g. http://192.168.1.7:8080/api/v1. Changing this requires logging in again.',
+                description: 'Base URL of the DocuSync backend, e.g. http://192.168.1.10:8080/api/v1. Changing this requires logging in again.',
                 controller: _serverUrlController,
                 icon: Icons.dns,
                 width: 320,
                 onSubmitted: (_) => _saveServerUrl(),
                 trailing: IconButton(
-                  icon: const Icon(Icons.save, color: Colors.blueAccent),
+                  icon: const Icon(Icons.save, color: AppColors.primary),
                   tooltip: 'Save',
                   onPressed: _saveServerUrl,
                 ),
@@ -216,7 +217,7 @@ class _SettingsPageState extends State<SettingsPage> {
             Text(
               'LOCAL FOLDER SYNC',
               style: GoogleFonts.inter(
-                color: Colors.white38,
+                color: AppColors.textMuted,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1,
@@ -226,9 +227,9 @@ class _SettingsPageState extends State<SettingsPage> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white10),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,14 +249,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       children: [
                         Text(
                           'Sync a local folder',
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _syncFolderPath == null
                               ? 'Not configured. Files added or changed in a chosen folder are uploaded automatically.'
                               : 'Watching: $_syncFolderPath',
-                          style: GoogleFonts.inter(fontSize: 12, color: Colors.white54),
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -289,7 +290,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'DATA RETENTION LIFECYCLE',
                 style: GoogleFonts.inter(
-                  color: Colors.white38,
+                  color: AppColors.textMuted,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1,
@@ -299,9 +300,9 @@ class _SettingsPageState extends State<SettingsPage> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: _isLoadingSettings
                     ? const Center(child: CircularProgressIndicator())
@@ -316,7 +317,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 24),
-                            child: Divider(color: Colors.white10, height: 1),
+                            child: Divider(color: AppColors.border, height: 1),
                           ),
                           _buildNumberSetting(
                             label: 'Trash Retention (Days)',
@@ -326,12 +327,12 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 24),
-                            child: Divider(color: Colors.white10, height: 1),
+                            child: Divider(color: AppColors.border, height: 1),
                           ),
                           Text(
                             'AUTO UPDATER CONFIGURATION',
                             style: GoogleFonts.inter(
-                              color: Colors.white38,
+                              color: AppColors.textMuted,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1,
@@ -361,7 +362,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               icon: const Icon(Icons.save, size: 18),
                               label: Text('Save Configurations', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
+                                backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -406,12 +407,12 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               Text(
                 label,
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 4),
               Text(
                 description,
-                style: GoogleFonts.inter(fontSize: 12, color: Colors.white54),
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -422,10 +423,10 @@ class _SettingsPageState extends State<SettingsPage> {
           child: TextField(
             controller: controller,
             onSubmitted: onSubmitted,
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+            style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.black26,
+              fillColor: AppColors.surfaceAlt,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide.none,
@@ -454,10 +455,10 @@ class _SettingsPageState extends State<SettingsPage> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.blueAccent.withValues(alpha: 0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: Colors.blueAccent, size: 20),
+          child: Icon(icon, color: AppColors.primary, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -466,12 +467,12 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               Text(
                 label,
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 4),
               Text(
                 description,
-                style: GoogleFonts.inter(fontSize: 12, color: Colors.white54),
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -482,11 +483,11 @@ class _SettingsPageState extends State<SettingsPage> {
           child: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+            style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.black26,
+              fillColor: AppColors.surfaceAlt,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide.none,

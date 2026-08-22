@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../services/api_service.dart';
+import '../../../theme/app_colors.dart';
 
 class FolderCard extends StatelessWidget {
   final FolderModel folder;
@@ -24,9 +25,9 @@ class FolderCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10, width: 1),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Material(
         color: Colors.transparent,
@@ -53,7 +54,7 @@ class FolderCard extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -69,7 +70,7 @@ class FolderCard extends StatelessWidget {
                     tooltip: 'Move to Trash',
                     onPressed: onDelete,
                   ),
-                if (!isTrashMode) const Icon(Icons.chevron_right, color: Colors.white38),
+                if (!isTrashMode) const Icon(Icons.chevron_right, color: AppColors.textMuted),
               ],
             ),
           ),

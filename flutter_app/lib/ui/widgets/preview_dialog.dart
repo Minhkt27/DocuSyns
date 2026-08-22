@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_colors.dart';
 
 class PreviewDialog extends StatefulWidget {
   final DocumentModel document;
@@ -99,12 +100,12 @@ class _PreviewDialogState extends State<PreviewDialog> {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
-        color: const Color(0xFF0F172A),
+        color: AppColors.surfaceAlt,
         child: SingleChildScrollView(
           child: Text(
             textContent,
             style: GoogleFonts.firaCode(
-              color: Colors.white70,
+              color: AppColors.textPrimary,
               fontSize: 13,
             ),
           ),
@@ -121,13 +122,13 @@ class _PreviewDialogState extends State<PreviewDialog> {
           const SizedBox(height: 24),
           Text(
             'Preview not supported',
-            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 8),
           Text(
             'Cannot preview .${ext.toUpperCase()} files.\nPlease download the file to view its contents.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(color: Colors.white54, fontSize: 14),
+            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
@@ -136,7 +137,7 @@ class _PreviewDialogState extends State<PreviewDialog> {
             label: const Text('Download Now'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              backgroundColor: Colors.blueAccent,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
             ),
@@ -149,7 +150,7 @@ class _PreviewDialogState extends State<PreviewDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.8,
@@ -161,26 +162,26 @@ class _PreviewDialogState extends State<PreviewDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white10)),
+                border: Border(bottom: BorderSide(color: AppColors.border)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.visibility, color: Colors.white, size: 24),
+                  const Icon(Icons.visibility, color: AppColors.textPrimary, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       widget.document.title,
-                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.download, color: Colors.blueAccent),
+                    icon: const Icon(Icons.download, color: AppColors.primary),
                     tooltip: 'Download',
                     onPressed: widget.onDownload,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54),
+                    icon: const Icon(Icons.close, color: AppColors.textSecondary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../services/api_service.dart';
+import '../../../theme/app_colors.dart';
 
 class DocumentCard extends StatelessWidget {
   final DocumentModel doc;
@@ -43,9 +44,9 @@ class DocumentCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10, width: 1),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Material(
         color: Colors.transparent,
@@ -60,10 +61,10 @@ class DocumentCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.description, color: Colors.blueAccent, size: 22),
+                  child: const Icon(Icons.description, color: AppColors.primary, size: 22),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -75,7 +76,7 @@ class DocumentCard extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -84,7 +85,7 @@ class DocumentCard extends StatelessWidget {
                         spacing: 8,
                         runSpacing: 4,
                         children: [
-                          _buildBadge(doc.documentCode, Colors.white10, Colors.white70),
+                          _buildBadge(doc.documentCode, AppColors.surfaceAlt, AppColors.textSecondary),
                           _buildBadge(
                             lockStatusText,
                             isLocked ? Colors.red.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.2),
@@ -105,8 +106,8 @@ class DocumentCard extends StatelessWidget {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isLocked ? Colors.redAccent : Colors.transparent,
-                      foregroundColor: isLocked ? Colors.white : Colors.white70,
-                      side: isLocked ? BorderSide.none : const BorderSide(color: Colors.white24),
+                      foregroundColor: isLocked ? Colors.white : AppColors.textSecondary,
+                      side: isLocked ? BorderSide.none : const BorderSide(color: AppColors.border),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
@@ -123,7 +124,7 @@ class DocumentCard extends StatelessWidget {
                     onPressed: onShowHistory,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.download, color: Colors.blueAccent, size: 20),
+                    icon: const Icon(Icons.download, color: AppColors.primary, size: 20),
                     tooltip: 'Download',
                     onPressed: onDownload,
                   ),

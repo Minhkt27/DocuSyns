@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'api_service.dart';
+import '../theme/app_colors.dart';
 
 /// Checks the server-configured latest client version against the running
 /// app and, if newer, prompts the user to download and install it. Pulled
@@ -55,21 +56,21 @@ class UpdateChecker {
 
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            backgroundColor: const Color(0xFF1E293B),
-            title: Text('Update Available', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+            backgroundColor: AppColors.surface,
+            title: Text('Update Available', style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'A new version ($version) of DocuSync is available and required to continue.',
-                  style: GoogleFonts.inter(color: Colors.white70),
+                  style: GoogleFonts.inter(color: AppColors.textSecondary),
                 ),
                 if (isDownloading) ...[
                   const SizedBox(height: 20),
                   LinearProgressIndicator(value: progress),
                   const SizedBox(height: 8),
-                  Text('Downloading: ${(progress * 100).toStringAsFixed(1)}%', style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                  Text('Downloading: ${(progress * 100).toStringAsFixed(1)}%', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12)),
                 ]
               ],
             ),
@@ -81,7 +82,7 @@ class UpdateChecker {
                 ),
               if (!isDownloading)
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
                   onPressed: () async {
                     setState(() => isDownloading = true);
                     await _downloadAndInstallUpdate(context, url, (p) {

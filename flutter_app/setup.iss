@@ -1,7 +1,7 @@
 [Setup]
 AppId={{5A88B3DE-1C10-4A0B-9BCB-123456789ABC}
 AppName=DocuSync
-AppVersion=2.1.0
+AppVersion=2.1.3
 AppPublisher=Minhkt27
 DefaultDirName={autopf}\DocuSync
 DefaultGroupName=DocuSync

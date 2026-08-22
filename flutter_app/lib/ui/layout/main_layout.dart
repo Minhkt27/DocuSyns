@@ -7,6 +7,7 @@ import '../pages/settings_page.dart';
 import '../pages/login_page.dart';
 import '../../services/auth_session.dart';
 import '../../services/sidecar_service.dart';
+import '../../theme/app_colors.dart';
 import '../widgets/sync_console.dart';
 
 class MainLayout extends StatefulWidget {
@@ -84,27 +85,30 @@ class _MainLayoutState extends State<MainLayout> {
     final currentUserName = session.userName ?? 'User';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.background,
       body: Row(
         children: [
           // Sidebar
           Container(
             width: 260,
-            color: const Color(0xFF1E293B),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              border: Border(right: BorderSide(color: AppColors.border)),
+            ),
             child: Column(
               children: [
                 const SizedBox(height: 40),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.cloud_sync, color: Colors.blueAccent, size: 28),
+                    const Icon(Icons.cloud_sync, color: AppColors.primary, size: 28),
                     const SizedBox(width: 12),
                     Text(
                       'DocuSync',
                       style: GoogleFonts.outfit(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -121,10 +125,10 @@ class _MainLayoutState extends State<MainLayout> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: currentRole == 'ADMIN'
-                        ? Colors.redAccent.withValues(alpha: 0.15)
+                        ? AppColors.danger.withValues(alpha: 0.1)
                         : currentRole == 'PROJECT_MANAGER'
-                            ? Colors.orangeAccent.withValues(alpha: 0.15)
-                            : Colors.blueAccent.withValues(alpha: 0.15),
+                            ? AppColors.warning.withValues(alpha: 0.1)
+                            : AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
@@ -138,16 +142,16 @@ class _MainLayoutState extends State<MainLayout> {
                                 : Icons.person,
                         size: 16,
                         color: currentRole == 'ADMIN'
-                            ? Colors.redAccent
+                            ? AppColors.danger
                             : currentRole == 'PROJECT_MANAGER'
-                                ? Colors.orangeAccent
-                                : Colors.blueAccent,
+                                ? AppColors.warning
+                                : AppColors.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         currentRole,
                         style: GoogleFonts.inter(
-                          color: Colors.white70,
+                          color: AppColors.textSecondary,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -159,12 +163,12 @@ class _MainLayoutState extends State<MainLayout> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: const BoxDecoration(
-                    border: Border(top: BorderSide(color: Colors.white10)),
+                    border: Border(top: BorderSide(color: AppColors.border)),
                   ),
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: currentRole == 'ADMIN' ? Colors.redAccent : Colors.blueAccent,
+                        backgroundColor: currentRole == 'ADMIN' ? AppColors.danger : AppColors.primary,
                         child: Text(
                           currentUserName.substring(0, 2).toUpperCase(),
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -174,13 +178,13 @@ class _MainLayoutState extends State<MainLayout> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(currentUserName, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
-                          Text(currentRole, style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                          Text(currentUserName, style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                          Text(currentRole, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12)),
                         ],
                       ),
                       const Spacer(),
                       IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.white54),
+                        icon: const Icon(Icons.logout, color: AppColors.textSecondary),
                         tooltip: 'Logout',
                         onPressed: () async {
                           await SidecarService.instance.stop();
@@ -206,13 +210,14 @@ class _MainLayoutState extends State<MainLayout> {
                   height: 70,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.white10)),
+                    color: AppColors.surface,
+                    border: Border(bottom: BorderSide(color: AppColors.border)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.notifications_none, color: Colors.white54),
+                        icon: const Icon(Icons.notifications_none, color: AppColors.textSecondary),
                         onPressed: () {},
                       ),
                     ],
@@ -241,17 +246,17 @@ class _MainLayoutState extends State<MainLayout> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: isActive ? Colors.blue.withValues(alpha: 0.15) : Colors.transparent,
+        color: isActive ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Material(
         color: Colors.transparent,
         child: ListTile(
-          leading: Icon(icon, color: isActive ? Colors.blueAccent : Colors.white54, size: 22),
+          leading: Icon(icon, color: isActive ? AppColors.primary : AppColors.textSecondary, size: 22),
           title: Text(
             title,
             style: GoogleFonts.inter(
-              color: isActive ? Colors.white : Colors.white54,
+              color: isActive ? AppColors.textPrimary : AppColors.textSecondary,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               fontSize: 14,
             ),

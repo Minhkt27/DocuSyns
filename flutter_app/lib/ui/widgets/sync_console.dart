@@ -4,6 +4,7 @@ import 'dart:async';
 import '../../services/api_service.dart';
 import '../../services/auth_session.dart';
 import '../../services/websocket_service.dart';
+import '../../theme/app_colors.dart';
 import 'package:intl/intl.dart';
 
 class SyncConsole extends StatefulWidget {
@@ -67,12 +68,12 @@ class _SyncConsoleState extends State<SyncConsole> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10, width: 1),
+        border: Border.all(color: AppColors.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: AppColors.textPrimary.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -84,17 +85,17 @@ class _SyncConsoleState extends State<SyncConsole> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: const BoxDecoration(
-              color: Color(0xFF1E293B),
+              color: AppColors.surfaceAlt,
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.history, size: 16, color: Colors.blueAccent),
+                const Icon(Icons.history, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 const Text(
                   'ACTIVITY LOG',
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: AppColors.textSecondary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
@@ -119,7 +120,7 @@ class _SyncConsoleState extends State<SyncConsole> {
                     ? const Center(
                         child: Text(
                           'No recent activities.',
-                          style: TextStyle(color: Colors.white30, fontFamily: 'monospace'),
+                          style: TextStyle(color: AppColors.textMuted, fontFamily: 'monospace'),
                         ),
                       )
                     : ListView.builder(
@@ -150,7 +151,7 @@ class _SyncConsoleState extends State<SyncConsole> {
                               child: Text(
                                 '[$timeStr] ${log.userName} ${log.action} "${log.targetName ?? '${log.targetType} #${log.targetId}'}"',
                                 style: const TextStyle(
-                                  color: Colors.blueAccent,
+                                  color: AppColors.primary,
                                   fontFamily: 'monospace',
                                   fontSize: 13,
                                 ),
@@ -162,7 +163,7 @@ class _SyncConsoleState extends State<SyncConsole> {
                               child: Text(
                                 widget.fallbackLogs[i],
                                 style: const TextStyle(
-                                  color: Colors.blueAccent,
+                                  color: AppColors.primary,
                                   fontFamily: 'monospace',
                                   fontSize: 13,
                                 ),

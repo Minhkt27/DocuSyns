@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../controllers/dashboard_controller.dart';
+import '../../../theme/app_colors.dart';
 
 class BreadcrumbBar extends StatelessWidget {
   final List<BreadcrumbItem> breadcrumbs;
@@ -18,20 +19,20 @@ class BreadcrumbBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
-          const Icon(Icons.home, size: 18, color: Colors.blueAccent),
+          const Icon(Icons.home, size: 18, color: AppColors.primary),
           const SizedBox(width: 8),
           InkWell(
             onTap: () => onNavigate(-1),
             child: Text(
               'Root',
               style: GoogleFonts.inter(
-                color: breadcrumbs.isEmpty ? Colors.white : Colors.blueAccent,
+                color: breadcrumbs.isEmpty ? AppColors.textPrimary : AppColors.primary,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -46,14 +47,14 @@ class BreadcrumbBar extends StatelessWidget {
               children: [
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Icon(Icons.chevron_right, size: 18, color: Colors.white38),
+                  child: Icon(Icons.chevron_right, size: 18, color: AppColors.textMuted),
                 ),
                 InkWell(
                   onTap: isLast ? null : () => onNavigate(index),
                   child: Text(
                     item.name,
                     style: GoogleFonts.inter(
-                      color: isLast ? Colors.white : Colors.blueAccent,
+                      color: isLast ? AppColors.textPrimary : AppColors.primary,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),

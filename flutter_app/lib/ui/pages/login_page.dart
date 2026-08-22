@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_session.dart';
+import '../../theme/app_colors.dart';
 import '../layout/main_layout.dart';
 
 class LoginPage extends StatefulWidget {
@@ -21,6 +22,19 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _loadLastEmail();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showStartupAuthErrorIfAny());
+  }
+
+  /// If we landed here because a saved "remember me" session failed to
+  /// restore at startup, say so - otherwise it just looks like remember me
+  /// silently did nothing.
+  void _showStartupAuthErrorIfAny() {
+    final error = context.read<AuthSession>().lastAuthError;
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved sign-in could not be restored: $error'), backgroundColor: Colors.orange),
+      );
+    }
   }
 
   Future<void> _loadLastEmail() async {
@@ -48,7 +62,20 @@ class _LoginPageState extends State<LoginPage> {
       final success = await session.login(email, password);
       if (success) {
         await AuthSession.saveLastEmail(email);
-        await session.setRememberMe(_rememberMe);
+        // Best-effort: a failure here (e.g. Windows secure storage) must
+        // never trap the user on the login screen after a valid login -
+        // "remember me" not persisting is a lesser problem than not being
+        // able to sign in at all.
+        try {
+          await session.setRememberMe(_rememberMe);
+        } catch (e) {
+          debugPrint('setRememberMe failed: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Signed in, but "Remember me" could not be saved: $e'), backgroundColor: Colors.orange),
+            );
+          }
+        }
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const MainLayout()),
@@ -57,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Invalid credentials'), backgroundColor: Colors.redAccent),
+            SnackBar(content: Text(session.lastAuthError ?? 'Invalid credentials'), backgroundColor: Colors.redAccent),
           );
         }
       }
@@ -84,17 +111,18 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.background,
       body: Center(
         child: Container(
           width: 400,
           padding: const EdgeInsets.all(40),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E293B),
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: AppColors.textPrimary.withValues(alpha: 0.06),
                 blurRadius: 24,
                 offset: const Offset(0, 12),
               )
@@ -107,14 +135,14 @@ class _LoginPageState extends State<LoginPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.cloud_sync, color: Colors.blueAccent, size: 48),
+                  const Icon(Icons.cloud_sync, color: AppColors.primary, size: 48),
                   const SizedBox(width: 16),
                   Text(
                     'DocuSync',
                     style: GoogleFonts.outfit(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -122,20 +150,20 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 48),
               TextField(
                 controller: _emailController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Email or Username',
-                  labelStyle: const TextStyle(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.person, color: Colors.white54),
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  prefixIcon: const Icon(Icons.person, color: AppColors.textSecondary),
                   filled: true,
-                  fillColor: const Color(0xFF0F172A),
+                  fillColor: AppColors.surfaceAlt,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Colors.blueAccent),
+                    borderSide: const BorderSide(color: AppColors.primary),
                   ),
                 ),
               ),
@@ -143,20 +171,20 @@ class _LoginPageState extends State<LoginPage> {
               TextField(
                 controller: _passwordController,
                 obscureText: true,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  labelStyle: const TextStyle(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.lock, color: Colors.white54),
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  prefixIcon: const Icon(Icons.lock, color: AppColors.textSecondary),
                   filled: true,
-                  fillColor: const Color(0xFF0F172A),
+                  fillColor: AppColors.surfaceAlt,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Colors.blueAccent),
+                    borderSide: const BorderSide(color: AppColors.primary),
                   ),
                 ),
                 onSubmitted: (_) => _handleLogin(),
@@ -166,11 +194,11 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   Theme(
                     data: ThemeData(
-                      unselectedWidgetColor: Colors.white54,
+                      unselectedWidgetColor: AppColors.textMuted,
                     ),
                     child: Checkbox(
                       value: _rememberMe,
-                      activeColor: Colors.blueAccent,
+                      activeColor: AppColors.primary,
                       onChanged: (value) {
                         setState(() {
                           _rememberMe = value ?? false;
@@ -187,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(
                       'Remember me',
                       style: GoogleFonts.inter(
-                        color: Colors.white70,
+                        color: AppColors.textSecondary,
                         fontSize: 14,
                       ),
                     ),
@@ -198,7 +226,7 @@ class _LoginPageState extends State<LoginPage> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleLogin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

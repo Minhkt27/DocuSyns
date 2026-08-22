@@ -14,7 +14,7 @@ import 'package:http/http.dart' as http;
 /// [setRememberMe] - is persisted and silently exchanged for a fresh access
 /// token at app startup (see [init]), without ever touching the password.
 class AuthSession extends ChangeNotifier {
-  static const String _defaultBaseUrl = 'http://192.168.1.7:8080/api/v1';
+  static const String _defaultBaseUrl = 'http://192.168.1.10:8080/api/v1';
   static const _storage = FlutterSecureStorage();
 
   String baseUrl = _defaultBaseUrl;
@@ -24,17 +24,34 @@ class AuthSession extends ChangeNotifier {
   int? userId;
   String? _refreshToken;
 
+  /// Set whenever "remember me" silently fails to restore a session at
+  /// startup (storage error or a rejected refresh token), so LoginPage can
+  /// surface *why* instead of the failure looking like the feature just
+  /// doing nothing.
+  String? lastAuthError;
+
   Future<void> init() async {
-    token = await _storage.read(key: 'jwt_token');
-    role = await _storage.read(key: 'user_role');
-    userName = await _storage.read(key: 'user_name');
-    final idStr = await _storage.read(key: 'user_id');
-    if (idStr != null) userId = int.tryParse(idStr);
+    try {
+      token = await _storage.read(key: 'jwt_token');
+      role = await _storage.read(key: 'user_role');
+      userName = await _storage.read(key: 'user_name');
+      final idStr = await _storage.read(key: 'user_id');
+      if (idStr != null) userId = int.tryParse(idStr);
 
-    final savedUrl = await _storage.read(key: 'server_base_url');
-    if (savedUrl != null && savedUrl.isNotEmpty) baseUrl = savedUrl;
+      final savedUrl = await _storage.read(key: 'server_base_url');
+      if (savedUrl != null && savedUrl.isNotEmpty) baseUrl = savedUrl;
 
-    _refreshToken = await _storage.read(key: 'refresh_token');
+      _refreshToken = await _storage.read(key: 'refresh_token');
+
+      // One-time cleanup: older builds stored raw passwords under this key
+      // before "remember me" was switched to refresh tokens. Purge it from
+      // any machine that still has it left over from before the upgrade.
+      await _storage.delete(key: 'saved_credentials_map');
+    } catch (e) {
+      lastAuthError = 'Could not read saved session: $e';
+      debugPrint('AuthSession.init: secure storage read failed: $e');
+    }
+
     if (_refreshToken != null) {
       final refreshed = await trySilentRefresh();
       if (!refreshed) {
@@ -52,20 +69,29 @@ class AuthSession extends ChangeNotifier {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
-      if (response.statusCode != 200) return false;
+      if (response.statusCode != 200) {
+        lastAuthError = 'Login rejected (HTTP ${response.statusCode}): ${response.body}';
+        return false;
+      }
 
       _applyAuthResponse(jsonDecode(response.body));
       await _persistSession();
+      lastAuthError = null;
       notifyListeners();
       return true;
-    } catch (_) {
+    } catch (e) {
+      lastAuthError = 'Login failed: $e';
+      debugPrint('AuthSession.login error: $e');
       return false;
     }
   }
 
   /// Exchanges the stored refresh token for a fresh access token. Returns
   /// false (without throwing) if there's no refresh token or it's no longer
-  /// valid - the caller should fall back to the normal login screen.
+  /// valid - the caller should fall back to the normal login screen. Sets
+  /// [lastAuthError] with the concrete reason on failure, since a silently
+  /// swallowed error here is exactly what makes "remember me" look broken
+  /// with no way to tell why.
   Future<bool> trySilentRefresh() async {
     final currentRefreshToken = _refreshToken;
     if (currentRefreshToken == null) return false;
@@ -78,16 +104,23 @@ class AuthSession extends ChangeNotifier {
             body: jsonEncode({'refreshToken': currentRefreshToken}),
           )
           .timeout(const Duration(seconds: 8));
-      if (response.statusCode != 200) return false;
+      if (response.statusCode != 200) {
+        lastAuthError = 'Saved session expired (HTTP ${response.statusCode}): ${response.body}';
+        debugPrint('AuthSession.trySilentRefresh: $lastAuthError');
+        return false;
+      }
 
       _applyAuthResponse(jsonDecode(response.body));
       await _persistSession();
       // Rotation means the server issued a new refresh token - persist it
       // under the same key so the next startup uses the current one.
       await _storage.write(key: 'refresh_token', value: _refreshToken);
+      lastAuthError = null;
       notifyListeners();
       return true;
-    } catch (_) {
+    } catch (e) {
+      lastAuthError = 'Could not restore saved session: $e';
+      debugPrint('AuthSession.trySilentRefresh error: $e');
       return false;
     }
   }
